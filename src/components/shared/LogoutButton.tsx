@@ -9,7 +9,14 @@ const LogoutButton = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success("Logged out successfully");
+      toast.success("Logged out successfully",{
+        style: {
+          borderRadius: '10px',
+          background: '#333',
+          color: '#fff',
+        },
+      });
+
       navigate("/login");
     } catch {
       toast.error("Failed to logout");

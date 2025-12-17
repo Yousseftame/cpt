@@ -9,8 +9,6 @@ import ErrorAlert from '../../../components/shared/ErrorAlert';
 import AuthInput from '../../../components/shared/AuthInput';
 import AuthButton from '../../../components/shared/AuthButton';
 import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
-// Import reusable components
-
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -22,63 +20,67 @@ const Register = () => {
   const navigate = useNavigate();
   const db = getFirestore();
 
-
   const handleRegister = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError('');
+    e.preventDefault();
+    setError('');
 
-  if (password !== confirmPassword) {
-    setError('Passwords do not match');
-    return;
-  }
-
-  if (password.length < 6) {
-    setError('Password must be at least 6 characters');
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-    console.log('User registered:', user);
-
-    // Save user in Firestore
-    await setDoc(doc(db, 'Admins', user.uid), {
-      uid: user.uid,
-      email: user.email,
-      role: 'admin',
-      createdAt: serverTimestamp(),
-    });
-
-    // Send verification email
-    await sendEmailVerification(user);
-
-    toast.success("Verification email sent! Please check your inbox.", {
-      style: {
-        borderRadius: '10px',
-        background: '#333',
-        color: '#fff',
-      },
-    });
-
-    // بعد كده بدل navigate Dashboard
-    navigate('/verify-account');
-
-  } catch (err: any) {
-    if (err.code === 'auth/email-already-in-use') {
-      setError('This email is already registered');
-    } else if (err.code === 'auth/invalid-email') {
-      setError('Invalid email address');
-    } else {
-      setError('Failed to create account. Please try again.');
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
     }
-  } finally {
-    setLoading(false);
-  }
-};
 
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      console.log('User registered:', user);
+
+      // Save user in Firestore
+      await setDoc(doc(db, 'Admins', user.uid), {
+        uid: user.uid,
+        name: name,
+        email: user.email,
+        role: 'admin',
+        createdAt: serverTimestamp(),
+      });
+
+      // Send verification email
+      await sendEmailVerification(user);
+
+      toast.success("Verification email sent! Please check your inbox.", {
+        style: {
+          borderRadius: '10px',
+          background: '#333',
+          color: '#fff',
+        },
+      });
+
+      // Store timestamp for cooldown period
+      sessionStorage.setItem('emailSentAt', Date.now().toString());
+
+      // Navigate to verify account page
+      navigate('/verify-account');
+
+    } catch (err: any) {
+      if (err.code === 'auth/email-already-in-use') {
+        setError('This email is already registered');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Invalid email address');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Password is too weak');
+      } else {
+        setError('Failed to create account. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <AuthCardWrapper

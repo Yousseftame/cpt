@@ -16,6 +16,7 @@ import AdminRole from "./Pages/Admin/AdminRole/AdminRole";
 import Register from "./Pages/Auth/Register/Register";
 import VerifyAccount from "./Pages/Auth/VerifyAccount/VerifyAccount";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+import Unauthorized from "./Pages/Unauthorized/Unauthorized";
 
 function App() {
   const routes = createBrowserRouter([
@@ -46,14 +47,23 @@ function App() {
       errorElement: <NotFound />,
       children: [
         { index: true, element: <Dashboard /> },
-        { path: "dashboard", element: <Dashboard /> },
+        {
+          path: "dashboard", element: <ProtectedRoute allowedRoles={["admin", "superAdmin"]}>
+            <Dashboard />
+          </ProtectedRoute>
+        },
 
         // Manager routes
         { path: "customer", element: <Customer /> },
-        { path: "model", element: <Model /> },
+        { path: "model", element: <ProtectedRoute allowedRoles={["admin"]}><Model /></ProtectedRoute> },
         { path: "request", element: <Request /> },
         { path: "ticket", element: <Ticket /> },
-        { path: "adminRole", element: <AdminRole /> },
+        {
+          path: "adminRole", element: <ProtectedRoute allowedRoles={["superAdmin"]}>
+            <AdminRole />
+          </ProtectedRoute>
+        },
+        { path: "/unauthorized", element: <Unauthorized /> },
 
 
       ],
