@@ -36,7 +36,7 @@ const Login = () => {
       console.log('Email verified:', currentUser?.emailVerified);
 
       // جلب الـ role من Firestore
-      const docRef = doc(db, "Admins", userCredential.user.uid);
+      const docRef = doc(db, "admins", userCredential.user.uid);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         console.log("Role after login:", docSnap.data().role);

@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (currentUser) {
                 await currentUser.reload(); // تحديث emailVerified
 
-                const docRef = doc(db, "Admins", currentUser.uid);
+                const docRef = doc(db, "admins", currentUser.uid);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {

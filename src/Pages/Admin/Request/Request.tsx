@@ -16,10 +16,10 @@ export default function Request() {
       {/* زرار حذف يظهر فقط للـ SuperAdmin */}
       {role === "superAdmin" ? (
         <button className="bg-red-500 text-white px-4 py-2 rounded">
-         superAdmin
+         {role}
         </button>
       ) : <button className="bg-green-500 text-white px-4 py-2 rounded">
-          admin
+          {role}
         </button>}
     </div>
   )

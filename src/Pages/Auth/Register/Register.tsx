@@ -24,6 +24,16 @@ const Register = () => {
     e.preventDefault();
     setError('');
 
+    if (!name.trim()) {
+  setError('Full name is required');
+  return;
+}
+
+ if (name.trim().length < 3) {
+  setError('Full name must be at least 3 characters');
+  return;
+}
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -42,11 +52,11 @@ const Register = () => {
       console.log('User registered:', user);
 
       // Save user in Firestore
-      await setDoc(doc(db, 'Admins', user.uid), {
+      await setDoc(doc(db, 'admins', user.uid), {
         uid: user.uid,
         name: name,
         email: user.email,
-        role: 'admin',
+        role: 'admin',   
         createdAt: serverTimestamp(),
       });
 
@@ -83,6 +93,7 @@ const Register = () => {
   };
 
   return (
+    <form onSubmit={handleRegister}   >
     <AuthCardWrapper
       title="Create Account"
       subtitle="Sign up to get started"
@@ -138,8 +149,8 @@ const Register = () => {
         />
 
         <AuthButton
-          type="button"
-          onClick={handleRegister}
+          type="submit"
+          
           loading={loading}
           loadingText="Creating account..."
           icon={<ArrowRight size={20} />}
@@ -166,6 +177,7 @@ const Register = () => {
         </button>
       </p>
     </AuthCardWrapper>
+    </form>
   );
 };
 

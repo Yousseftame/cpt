@@ -36,6 +36,10 @@ function App() {
       ],
     },
     {
+      path: "/unauthorized",
+      element: <Unauthorized />,
+    },
+    {
       path: "",
       element: (
 
@@ -63,7 +67,7 @@ function App() {
             <AdminRole />
           </ProtectedRoute>
         },
-        { path: "/unauthorized", element: <Unauthorized /> },
+        
 
 
       ],
