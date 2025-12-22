@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import  { useState, useEffect } from "react";
 import { MailCheck, ArrowRight, Clock } from "lucide-react";
 import { sendEmailVerification } from "firebase/auth";
 import { auth } from "../../../service/firebase";

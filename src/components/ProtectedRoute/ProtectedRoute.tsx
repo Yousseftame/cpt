@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../store/AuthContext/AuthContext";
 import { useEffect, useState } from "react";
-import { auth } from "../../service/firebase";
+// import { auth } from "../../service/firebase";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
