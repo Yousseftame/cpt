@@ -17,6 +17,15 @@ import Register from "./Pages/Auth/Register/Register";
 import VerifyAccount from "./Pages/Auth/VerifyAccount/VerifyAccount";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Unauthorized from "./Pages/Unauthorized/Unauthorized";
+import AddGenerator from "./Pages/Admin/Model/AddGenerator";
+import GeneratorList from "./Pages/Admin/Model/GeneratorList";
+import EditGenerator from "./Pages/Admin/Model/EditGenerator";
+import CreateCustomer from "./Pages/Admin/Customer/CreateCustomer";
+import CustomersList from "./Pages/Admin/Customer/CustomersList";
+import CustomerDetails from "./Pages/Admin/Customer/CustomerDetails";
+import CustomerTickets from "./Pages/Admin/Customer/CustomerTickets";
+import PurchaseRequests from "./Pages/Admin/Request/PurchaseRequests";
+import RequestDetails from "./Pages/Admin/Request/RequestDetails";
 
 function App() {
   const routes = createBrowserRouter([
@@ -58,16 +67,32 @@ function App() {
         },
 
         // Manager routes
-        { path: "customer", element: <Customer /> },
-        { path: "model", element: <ProtectedRoute allowedRoles={["admin"]}><Model /></ProtectedRoute> },
+        // { path: "customer", element: <Customer /> },
+        { path: "customers", element: <CreateCustomer /> },
+        { path: "customer", element: <CustomersList /> },
+        { path: "customer/:id", element: <CustomerDetails /> },
+        { path: "/customer/:id/tickets", element: <CustomerTickets /> },
+
+
+        
+        
+        { path: "model", element: <ProtectedRoute ><Model /></ProtectedRoute> },
+        { path: "/models/add", element: < AddGenerator />},
+        { path: "/models", element: < GeneratorList  />},
+        { path: "/models/edit/:id", element: < EditGenerator  />},
+
+        // request 
         { path: "request", element: <Request /> },
+        { path: "/requests", element: <PurchaseRequests /> },
+        { path: "/requests/:id", element: <RequestDetails /> },
+
         { path: "ticket", element: <Ticket /> },
         {
           path: "adminRole", element: <ProtectedRoute allowedRoles={["superAdmin"]}>
             <AdminRole />
           </ProtectedRoute>
         },
-        
+
 
 
       ],

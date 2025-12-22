@@ -10,6 +10,7 @@ import AuthInput from '../../../components/shared/AuthInput';
 import AuthButton from '../../../components/shared/AuthButton';
 import { doc, getDoc } from 'firebase/firestore';
 
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -110,12 +111,15 @@ const Login = () => {
   }
 
   return (
+
     <AuthCardWrapper
       title="Welcome Back"
       subtitle="Sign in to continue to your account"
       icon={<Lock className="text-white" size={32} />}
     >
       <ErrorAlert message={error} onClose={() => setError('')} />
+
+
 
       <form onSubmit={handleLogin} className="space-y-6">
         <AuthInput
