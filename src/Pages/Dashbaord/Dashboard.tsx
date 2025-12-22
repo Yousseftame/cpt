@@ -1,4 +1,4 @@
-import React from 'react'
+// import React from 'react'
 import LogoutButton from '../../components/shared/LogoutButton'
 
 export default function Dashboard() {

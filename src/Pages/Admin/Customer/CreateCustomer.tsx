@@ -68,7 +68,7 @@ const CreateCustomer: React.FC = () => {
 
   return (
     <div className="flex justify-center mt-10">
-      <Card className="w-[450px] shadow-xl">
+      <Card className="w-112.5 shadow-xl">
         <CardContent>
           <Typography variant="h5" gutterBottom>
             Create Customer
