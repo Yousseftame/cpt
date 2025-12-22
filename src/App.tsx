@@ -8,7 +8,6 @@ import Dashboard from "./Pages/Dashbaord/Dashboard";
 import { Toaster } from "react-hot-toast";
 import ResetPassword from "./Pages/Auth/ResetPassword/ResetPassword";
 // import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
-import Customer from "./Pages/Admin/Customer/Customer";
 import Model from "./Pages/Admin/Model/Model";
 import Request from "./Pages/Admin/Request/Request";
 import Ticket from "./Pages/Admin/Ticket/Ticket";

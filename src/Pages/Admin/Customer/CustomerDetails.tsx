@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { arrayRemove, collection, doc, getDoc, getDocs, serverTimestamp, updateDoc } from "firebase/firestore";
+import { arrayRemove, collection, doc, getDoc, getDocs,  updateDoc } from "firebase/firestore";
 import { Card, CardContent, Typography, TextField, Button } from "@mui/material";
 import { db } from "../../../service/firebase";
 import { arrayUnion } from "firebase/firestore";
@@ -180,7 +180,7 @@ const [editModel, setEditModel] = useState("");
             {/* edit from  */}
   {editOpen && (
   <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-    <div className="bg-white p-5 rounded shadow-lg w-[400px]">
+    <div className="bg-white p-5 rounded shadow-lg w-100">
 
       <h3 className="text-lg font-semibold mb-3">Edit Unit</h3>
 
@@ -218,7 +218,7 @@ const [editModel, setEditModel] = useState("");
 
 
 
-            <Card className="w-[600px] shadow-xl">
+            <Card className="w-150 shadow-xl">
                 <CardContent>
                     <Typography variant="h5" gutterBottom>
                         Customer Details
@@ -287,7 +287,7 @@ const [editModel, setEditModel] = useState("");
             {/* add units form */}
             {assignOpen && (
                 <div className="fixed inset-0 flex justify-center items-center bg-black/50">
-                    <div className="bg-white p-6 rounded shadow-lg w-[400px]">
+                    <div className="bg-white p-6 rounded shadow-lg w-100">
 
                         <Typography variant="h6">Assign Unit</Typography>
 
