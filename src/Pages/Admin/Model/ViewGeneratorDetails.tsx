@@ -73,18 +73,24 @@ export default function ViewGeneratorDetails() {
     fetchModel();
   }, [id, navigate]);
 
-  const formatDate = (timestamp: any) => {
-    if (!timestamp) return "N/A";
-    try {
-      return new Date(timestamp.toDate()).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    } catch {
-      return "N/A";
-    }
-  };
+  // format date for days / hours 
+const formatDate = (timestamp: any) => {
+  if (!timestamp) return "N/A";
+  try {
+    return new Date(timestamp.toDate()).toLocaleString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit", // اختياري
+      hour12: true, // AM / PM
+    });
+  } catch {
+    return "N/A";
+  }
+};
+
 
   if (loading) {
     return (
@@ -132,8 +138,8 @@ export default function ViewGeneratorDetails() {
             <Chip
               label={model.category}
               sx={{
-                bgcolor: "#EEF2FF",
-                color: "#4F46E5",
+                bgcolor: "#FFF1F0",
+                color: "#FF5F5E",
                 fontWeight: 600,
               }}
             />
@@ -343,6 +349,7 @@ export default function ViewGeneratorDetails() {
                 </Box>
                 <p className="text-gray-900 font-semibold">
                   {formatDate(model.createdAt)}
+                  
                 </p>
               </Box>
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc, query, orderBy } from "firebase/firestore";
 import { 
   Table, 
   TableBody, 
@@ -66,7 +66,11 @@ export default function GeneratorList() {
   const fetchModels = async () => {
     setLoading(true);
     try {
-      const snapshot = await getDocs(collection(db, "generatorModels"));
+      const q = query(
+  collection(db, "generatorModels"),
+  orderBy("createdAt", "desc")
+);
+      const snapshot = await  getDocs(q);
       const data = snapshot.docs.map(doc => ({
         id: doc.id,
         ...(doc.data() as Omit<GeneratorModel, "id">),
@@ -102,7 +106,7 @@ export default function GeneratorList() {
     if (categoryFilter !== "all") {
       filtered = filtered.filter(model => 
         model.category.toLowerCase() === categoryFilter.toLowerCase()
-      );
+      );  
     }
 
     setFilteredModels(filtered);
@@ -140,10 +144,12 @@ export default function GeneratorList() {
     setSelectedModel(null);
   };
 
+  // paginate
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
+  //paginate
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
@@ -172,7 +178,7 @@ export default function GeneratorList() {
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Generator Models</h1>
+          <h1 className="text-3xl font-bold  text-[#4F46E5]">Generator Models</h1>
           <p className="text-gray-600 mt-1">Manage your generator inventory</p>
         </div>
         <Button
@@ -234,7 +240,7 @@ export default function GeneratorList() {
         </div>
 
         <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
-          <span className="font-medium">{filteredModels.length}</span>
+          <span className="font-bold ">{filteredModels.length}</span>
           <span>results found</span>
           {(searchTerm || categoryFilter !== "all") && (
             <Button
@@ -301,13 +307,22 @@ export default function GeneratorList() {
                       />
                     </TableCell>
                     <TableCell>
-                      <span className="text-gray-700">{model.category}</span>
+                      <span className="text-gray-700"><Chip 
+                        label={model.category} 
+                        size="small" 
+                        sx={{ bgcolor: '#FFF1F0', color: '#FF5F5E' }}
+                      /></span>
                     </TableCell>
                     <TableCell>
                       <span className="font-medium text-gray-800">{model.powerRating}</span>
                     </TableCell>
                     <TableCell>
-                      <span className="font-semibold text-green-600">${model.price.toLocaleString()}</span>
+                      <span className="font-semibold text-green-600"> 
+                        <Chip 
+                        label= {`$${model.price.toLocaleString()}`}
+                        size="small" 
+                        sx={{ bgcolor: '#F6FFED', color: '#6CC464' }}
+                      /></span>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1 text-sm">

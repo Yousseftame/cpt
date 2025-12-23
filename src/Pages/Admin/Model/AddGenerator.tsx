@@ -6,9 +6,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { ArrowLeft, Save, Zap } from "lucide-react";
 import Grid from '@mui/material/Grid';
-// import Typography from '@mui/material/Typography';
-// import Breadcrumbs from '@mui/material/Breadcrumbs';
-// import Link from '@mui/material/Link';
+
 
 interface Specifications {
   phase: string;
@@ -160,17 +158,7 @@ export default function AddGenerator() {
         >
           Back to Models
         </Button>
-        {/* <Breadcrumbs aria-label="breadcrumb">
-  
-  <Link
-    underline="hover"
-    color="inherit"
-    
-  >
-    Core
-  </Link>
-  <Typography sx={{ color: 'text.primary' }}>Breadcrumbs</Typography>
-</Breadcrumbs> */}
+     
         <Box>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Add Generator Model</h1>
           <p className="text-gray-600">Create a new generator model entry</p>
@@ -241,7 +229,7 @@ export default function AddGenerator() {
                 <TextField
                   fullWidth
                   select
-                  label="Category"
+                  label="Select Category"
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
@@ -308,7 +296,7 @@ export default function AddGenerator() {
                 <TextField
                   fullWidth
                   select
-                  label="Phase"
+                  label="Select Phase"
                   name="phase"
                   value={formData.specifications.phase}
                   onChange={handleSpecChange}
@@ -333,7 +321,7 @@ export default function AddGenerator() {
                 <TextField
                   fullWidth
                   select
-                  label="Voltage"
+                  label="Select Voltage"
                   name="voltage"
                   value={formData.specifications.voltage}
                   onChange={handleSpecChange}
