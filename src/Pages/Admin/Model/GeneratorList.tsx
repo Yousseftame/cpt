@@ -1,8 +1,37 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
-import { Table, TableBody, TableCell, TableHead, TableRow, Button, Paper } from "@mui/material";
-import { Link } from "react-router-dom";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableRow, 
+  Button, 
+  TextField,
+  IconButton,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TablePagination,
+  Menu,
+  MenuItem,
+  InputAdornment
+} from "@mui/material";
+import { 
+  Edit, 
+  Trash2, 
+  Plus, 
+  Search, 
+  Filter, 
+  MoreVertical,
+  X,
+  AlertTriangle
+} from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { db } from "../../../service/firebase";
+import toast from "react-hot-toast";
 
 interface GeneratorModel {
   id: string;
@@ -10,76 +39,380 @@ interface GeneratorModel {
   sku: string;
   price: number;
   category: string;
+  powerRating: string;
+  description: string;
+  specifications: {
+    phase: string;
+    voltage: string;
+  };
 }
 
 export default function GeneratorList() {
   const [models, setModels] = useState<GeneratorModel[]>([]);
+  const [filteredModels, setFilteredModels] = useState<GeneratorModel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [modelToDelete, setModelToDelete] = useState<GeneratorModel | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedModel, setSelectedModel] = useState<GeneratorModel | null>(null);
+  
+  const navigate = useNavigate();
 
   const fetchModels = async () => {
-    const snapshot = await getDocs(collection(db, "generatorModels"));
-    const data = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...(doc.data() as Omit<GeneratorModel, "id">),
-    }));
-
-    setModels(data);
-  };
-
-  const handleDelete = async (id: string) => {
-    await deleteDoc(doc(db, "generatorModels", id));
-    fetchModels();
+    setLoading(true);
+    try {
+      const snapshot = await getDocs(collection(db, "generatorModels"));
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...(doc.data() as Omit<GeneratorModel, "id">),
+      }));
+      setModels(data);
+      setFilteredModels(data);
+    } catch (error) {
+      toast.error("Failed to fetch models");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchModels();
   }, []);
 
+  // Filter and Search Logic
+  useEffect(() => {
+    let filtered = models;
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(model => 
+        model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        model.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        model.category.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Category filter
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter(model => 
+        model.category.toLowerCase() === categoryFilter.toLowerCase()
+      );
+    }
+
+    setFilteredModels(filtered);
+    setPage(0); // Reset to first page when filters change
+  }, [searchTerm, categoryFilter, models]);
+
+  const handleDelete = async () => {
+    if (!modelToDelete) return;
+
+    try {
+      await deleteDoc(doc(db, "generatorModels", modelToDelete.id));
+      toast.success(`${modelToDelete.name} deleted successfully`);
+      setDeleteDialog(false);
+      setModelToDelete(null);
+      fetchModels();
+    } catch (error) {
+      toast.error("Failed to delete model");
+      console.error(error);
+    }
+  };
+
+  const openDeleteDialog = (model: GeneratorModel) => {
+    setModelToDelete(model);
+    setDeleteDialog(true);
+    handleMenuClose();
+  };
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>, model: GeneratorModel) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedModel(model);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedModel(null);
+  };
+
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const categories = Array.from(new Set(models.map(m => m.category)));
+
+  // Get paginated data
+  const paginatedModels = filteredModels.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <p className="mt-4 text-gray-600">Loading models...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Paper className="p-6 max-w-5xl mx-auto mt-10">
-      <h2 className="text-2xl font-bold mb-6">Generator Models</h2>
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Generator Models</h1>
+          <p className="text-gray-600 mt-1">Manage your generator inventory</p>
+        </div>
+        <Button
+          variant="contained"
+          startIcon={<Plus size={20} />}
+          onClick={() => navigate("/models/add")}
+          sx={{
+            bgcolor: '#4F46E5',
+            '&:hover': { bgcolor: '#4338CA' },
+            textTransform: 'none',
+            px: 3,
+            py: 1.5,
+            borderRadius: 2
+          }}
+        >
+          Add New Model
+        </Button>
+      </div>
 
-      <Link to="/models/add">
-        <Button variant="contained" className="mb-4">Add New Model</Button>
-      </Link>
+      {/* Filters Section */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search */}
+          <TextField
+            placeholder="Search by name, SKU, or category..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            variant="outlined"
+            size="small"
+            sx={{ flex: 1 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={20} className="text-gray-400" />
+                </InputAdornment>
+              ),
+              endAdornment: searchTerm && (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setSearchTerm("")}>
+                    <X size={16} />
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
+          />
 
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>SKU</TableCell>
-            <TableCell>Price</TableCell>
-            <TableCell>Category</TableCell>
-            <TableCell>Actions</TableCell>
-          </TableRow>
-        </TableHead>
+          {/* Category Filter */}
+          <div className="flex items-center gap-2">
+            <Filter size={20} className="text-gray-400" />
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="all">All Categories</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-        <TableBody>
-          {models.map(model => (
-            <TableRow key={model.id}>
-              <TableCell>{model.name}</TableCell>
-              <TableCell>{model.sku}</TableCell>
-              <TableCell>${model.price}</TableCell>
-              <TableCell>{model.category}</TableCell>
+        {/* Results Count */}
+        <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
+          <span className="font-medium">{filteredModels.length}</span>
+          <span>results found</span>
+          {(searchTerm || categoryFilter !== "all") && (
+            <Button
+              size="small"
+              onClick={() => {
+                setSearchTerm("");
+                setCategoryFilter("all");
+              }}
+              sx={{ textTransform: 'none', ml: 1 }}
+            >
+              Clear filters
+            </Button>
+          )}
+        </div>
+      </div>
 
-              <TableCell>
-                <Link to={`/models/edit/${model.id}`}>
-                  <Button variant="outlined" size="small">Edit</Button>
-                </Link>
+      {/* Table Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: '#F9FAFB' }}>
+                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Model Name</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>SKU</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Category</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Power Rating</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Price</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Specifications</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#374151', textAlign: 'center' }}>Actions</TableCell>
+              </TableRow>
+            </TableHead>
 
-                <Button
-                  variant="outlined"
-                  color="error"
-                  size="small"
-                  className="ml-2"
-                  onClick={() => handleDelete(model.id)}
-                >
-                  Delete
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Paper>
+            <TableBody>
+              {paginatedModels.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                    <div className="text-gray-400">
+                      <Search size={48} className="mx-auto mb-2 opacity-50" />
+                      <p className="text-lg">No models found</p>
+                      <p className="text-sm">Try adjusting your filters</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedModels.map((model) => (
+                  <TableRow 
+                    key={model.id}
+                    sx={{ 
+                      '&:hover': { bgcolor: '#F9FAFB' },
+                      transition: 'background-color 0.2s'
+                    }}
+                  >
+                    <TableCell>
+                      <div>
+                        <p className="font-medium text-gray-800">{model.name}</p>
+                        <p className="text-sm text-gray-500">{model.description?.substring(0, 50)}...</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={model.sku} 
+                        size="small" 
+                        sx={{ bgcolor: '#EEF2FF', color: '#4F46E5' }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-gray-700">{model.category}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium text-gray-800">{model.powerRating}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-semibold text-green-600">${model.price.toLocaleString()}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1 text-sm">
+                        <p className="text-gray-600">
+                          <span className="font-medium">Phase:</span> {model.specifications?.phase || 'N/A'}
+                        </p>
+                        <p className="text-gray-600">
+                          <span className="font-medium">Voltage:</span> {model.specifications?.voltage || 'N/A'}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell align="center">
+                      <IconButton
+                        onClick={(e) => handleMenuClick(e, model)}
+                        size="small"
+                      >
+                        <MoreVertical size={20} />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Pagination */}
+        <TablePagination
+          component="div"
+          count={filteredModels.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+        />
+      </div>
+
+      {/* Actions Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem 
+          onClick={() => {
+            if (selectedModel) navigate(`/models/edit/${selectedModel.id}`);
+            handleMenuClose();
+          }}
+        >
+          <Edit size={16} className="mr-2" />
+          Edit
+        </MenuItem>
+        <MenuItem 
+          onClick={() => selectedModel && openDeleteDialog(selectedModel)}
+          sx={{ color: '#DC2626' }}
+        >
+          <Trash2 size={16} className="mr-2" />
+          Delete
+        </MenuItem>
+      </Menu>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialog}
+        onClose={() => setDeleteDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle className="flex items-center gap-3 text-red-600">
+          <AlertTriangle size={24} />
+          Confirm Deletion
+        </DialogTitle>
+        <DialogContent>
+          <p className="text-gray-700 mb-4">
+            Are you sure you want to delete <strong>{modelToDelete?.name}</strong>?
+          </p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm text-red-800">
+              <strong>Warning:</strong> This action cannot be undone. All data associated with this model will be permanently deleted.
+            </p>
+          </div>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button
+            onClick={() => setDeleteDialog(false)}
+            variant="outlined"
+            sx={{ textTransform: 'none' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDelete}
+            variant="contained"
+            color="error"
+            startIcon={<Trash2 size={16} />}
+            sx={{ textTransform: 'none' }}
+          >
+            Delete Model
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </div>
   );
 }
