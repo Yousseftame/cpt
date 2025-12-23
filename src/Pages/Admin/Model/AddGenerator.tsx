@@ -1,10 +1,14 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import { TextField, Button, Paper, Grid, MenuItem, Divider } from "@mui/material";
+import { TextField, Button, Paper,  Divider, Box } from "@mui/material";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../service/firebase";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { ArrowLeft, Save, Zap } from "lucide-react";
+import Grid from '@mui/material/Grid';
+import Typography from '@mui/material/Typography';
+import Breadcrumbs from '@mui/material/Breadcrumbs';
+import Link from '@mui/material/Link';
 
 interface Specifications {
   phase: string;
@@ -57,7 +61,6 @@ export default function AddGenerator() {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
     }
@@ -105,56 +108,88 @@ export default function AddGenerator() {
     setLoading(true);
 
     try {
-      await addDoc(collection(db, "generatorModels"), {
-        ...formData,
+      const docData = {
+        name: formData.name.trim(),
+        sku: formData.sku.trim(),
         price: Number(formData.price),
+        category: formData.category,
+        powerRating: formData.powerRating.trim(),
+        description: formData.description.trim(),
+        specifications: {
+          phase: formData.specifications.phase,
+          voltage: formData.specifications.voltage,
+        },
         galleryImages: [],
         troubleshootingPDFs: [],
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
+      };
+
+      const docRef = await addDoc(collection(db, "generatorModels"), docData);
+      
+      console.log("Document written with ID: ", docRef.id);
 
       toast.success("Generator model added successfully!");
-      navigate("/models");
-    } catch (error) {
-      toast.error("Failed to add generator model");
-      console.error(error);
+      
+      // Small delay to ensure Firestore write completes
+      setTimeout(() => {
+        navigate("/models");
+      }, 500);
+      
+    } catch (error: any) {
+      console.error("Error adding document: ", error);
+      toast.error(error.message || "Failed to add generator model");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
+    <Box sx={{ maxWidth: 1200, mx: 'auto', p: { xs: 2, md: 3 } }}>
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <Box sx={{ mb: 4 }}>
         <Button
           variant="outlined"
           startIcon={<ArrowLeft size={20} />}
           onClick={() => navigate("/models")}
-          sx={{ textTransform: 'none' }}
+          sx={{ 
+            textTransform: 'none',
+            mb: 2,
+            borderRadius: 2
+          }}
         >
-          Back
+          Back to Models
         </Button>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Add Generator Model</h1>
-          <p className="text-gray-600 mt-1">Create a new generator model entry</p>
-        </div>
-      </div>
+        {/* <Breadcrumbs aria-label="breadcrumb">
+  
+  <Link
+    underline="hover"
+    color="inherit"
+    
+  >
+    Core
+  </Link>
+  <Typography sx={{ color: 'text.primary' }}>Breadcrumbs</Typography>
+</Breadcrumbs> */}
+        <Box>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Add Generator Model</h1>
+          <p className="text-gray-600">Create a new generator model entry</p>
+        </Box>
+      </Box>
 
-      <Paper className="p-8 shadow-sm border border-gray-100">
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, border: '1px solid', borderColor: 'grey.200', borderRadius: 3 }}>
+        <form onSubmit={handleSubmit}>
           
           {/* Basic Information Section */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
+          <Box sx={{ mb: 5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
               <Zap className="text-indigo-600" size={24} />
               <h2 className="text-xl font-semibold text-gray-800">Basic Information</h2>
-            </div>
-            <Divider sx={{ mb: 3 }} />
+            </Box>
+            <Divider sx={{ mb: 4 }} />
             
             <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
                   label="Model Name"
@@ -165,10 +200,11 @@ export default function AddGenerator() {
                   helperText={errors.name}
                   required
                   placeholder="e.g., PowerMax 5000"
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
                   label="SKU"
@@ -179,10 +215,11 @@ export default function AddGenerator() {
                   helperText={errors.sku}
                   required
                   placeholder="e.g., GEN-PM-5000"
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
                   type="number"
@@ -196,10 +233,11 @@ export default function AddGenerator() {
                   InputProps={{
                     startAdornment: <span className="mr-2 text-gray-500">$</span>
                   }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
                   select
@@ -210,17 +248,21 @@ export default function AddGenerator() {
                   error={!!errors.category}
                   helperText={errors.category}
                   required
+                  SelectProps={{
+                    native: true,
+                  }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 >
-                  <MenuItem value="">Select Category</MenuItem>
+                  <option value="">Select Category</option>
                   {categories.map((cat) => (
-                    <MenuItem key={cat} value={cat}>
+                    <option key={cat} value={cat}>
                       {cat}
-                    </MenuItem>
+                    </option>
                   ))}
                 </TextField>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
                   label="Power Rating"
@@ -230,11 +272,12 @@ export default function AddGenerator() {
                   error={!!errors.powerRating}
                   helperText={errors.powerRating}
                   required
-                  placeholder="e.g., 5000W"
+                  placeholder="e.g., 5000W or 5kW"
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   multiline
@@ -246,21 +289,22 @@ export default function AddGenerator() {
                   error={!!errors.description}
                   helperText={errors.description || "Provide a detailed description of the generator model"}
                   required
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 />
               </Grid>
             </Grid>
-          </div>
+          </Box>
 
           {/* Specifications Section */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
               <Zap className="text-indigo-600" size={24} />
               <h2 className="text-xl font-semibold text-gray-800">Specifications</h2>
-            </div>
-            <Divider sx={{ mb: 3 }} />
+            </Box>
+            <Divider sx={{ mb: 4 }} />
 
             <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
                   select
@@ -271,17 +315,21 @@ export default function AddGenerator() {
                   error={!!errors.phase}
                   helperText={errors.phase}
                   required
+                  SelectProps={{
+                    native: true,
+                  }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 >
-                  <MenuItem value="">Select Phase</MenuItem>
+                  <option value="">Select Phase</option>
                   {phases.map((phase) => (
-                    <MenuItem key={phase} value={phase}>
+                    <option key={phase} value={phase}>
                       {phase}
-                    </MenuItem>
+                    </option>
                   ))}
                 </TextField>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
                   select
@@ -292,32 +340,34 @@ export default function AddGenerator() {
                   error={!!errors.voltage}
                   helperText={errors.voltage}
                   required
+                  SelectProps={{
+                    native: true,
+                  }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 >
-                  <MenuItem value="">Select Voltage</MenuItem>
+                  <option value="">Select Voltage</option>
                   {voltages.map((voltage) => (
-                    <MenuItem key={voltage} value={voltage}>
+                    <option key={voltage} value={voltage}>
                       {voltage}
-                    </MenuItem>
+                    </option>
                   ))}
                 </TextField>
               </Grid>
             </Grid>
-          </div>
-
-          {/* Info Box */}
-          {/* <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800">
-              <strong>Note:</strong> Gallery images and troubleshooting PDFs can be added after creating the model.
-            </p>
-          </div> */}
+          </Box>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 justify-end pt-4">
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', pt: 2 }}>
             <Button
               variant="outlined"
               onClick={() => navigate("/models")}
               disabled={loading}
-              sx={{ textTransform: 'none', px: 4 }}
+              sx={{ 
+                textTransform: 'none', 
+                px: 4, 
+                py: 1.5,
+                borderRadius: 2
+              }}
             >
               Cancel
             </Button>
@@ -329,15 +379,17 @@ export default function AddGenerator() {
               sx={{
                 textTransform: 'none',
                 px: 4,
+                py: 1.5,
                 bgcolor: '#4F46E5',
+                borderRadius: 2,
                 '&:hover': { bgcolor: '#4338CA' }
               }}
             >
               {loading ? "Saving..." : "Save Model"}
             </Button>
-          </div>
+          </Box>
         </form>
       </Paper>
-    </div>
+    </Box>
   );
 }

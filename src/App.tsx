@@ -7,7 +7,6 @@ import MasterLayout from "./layouts/MasterLayout/MasterLayout";
 import Dashboard from "./Pages/Dashbaord/Dashboard";
 import { Toaster } from "react-hot-toast";
 import ResetPassword from "./Pages/Auth/ResetPassword/ResetPassword";
-// import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Model from "./Pages/Admin/Model/Model";
 import Request from "./Pages/Admin/Request/Request";
 import Ticket from "./Pages/Admin/Ticket/Ticket";
@@ -19,6 +18,7 @@ import Unauthorized from "./Pages/Unauthorized/Unauthorized";
 import AddGenerator from "./Pages/Admin/Model/AddGenerator";
 import GeneratorList from "./Pages/Admin/Model/GeneratorList";
 import EditGenerator from "./Pages/Admin/Model/EditGenerator";
+import ViewGeneratorDetails from "./Pages/Admin/Model/ViewGeneratorDetails";
 import CreateCustomer from "./Pages/Admin/Customer/CreateCustomer";
 import CustomersList from "./Pages/Admin/Customer/CustomersList";
 import CustomerDetails from "./Pages/Admin/Customer/CustomerDetails";
@@ -30,9 +30,7 @@ function App() {
   const routes = createBrowserRouter([
     {
       path: "/",
-      element: (
-        <AuthLayout />
-      ),
+      element: <AuthLayout />,
       errorElement: <NotFound />,
       children: [
         { index: true, element: <Login /> },
@@ -50,57 +48,66 @@ function App() {
     {
       path: "",
       element: (
-
         <ProtectedRoute>
           <MasterLayout />
         </ProtectedRoute>
-
       ),
       errorElement: <NotFound />,
       children: [
         { index: true, element: <Dashboard /> },
         {
-          path: "dashboard", element: <ProtectedRoute allowedRoles={["admin", "superAdmin"]}>
-            <Dashboard />
-          </ProtectedRoute>
+          path: "dashboard", 
+          element: (
+            <ProtectedRoute allowedRoles={["admin", "superAdmin"]}>
+              <Dashboard />
+            </ProtectedRoute>
+          )
         },
 
-        // Manager routes
-        // { path: "customer", element: <Customer /> },
+        // Customer routes
         { path: "customers", element: <CreateCustomer /> },
         { path: "customer", element: <CustomersList /> },
         { path: "customer/:id", element: <CustomerDetails /> },
         { path: "/customer/:id/tickets", element: <CustomerTickets /> },
 
+        // Model/Generator routes
+        { 
+          path: "model", 
+          element: (
+            <ProtectedRoute>
+              <Model />
+            </ProtectedRoute>
+          ) 
+        },
+        { path: "/models/add", element: <AddGenerator /> },
+        { path: "/models", element: <GeneratorList /> },
+        { path: "/models/view/:id", element: <ViewGeneratorDetails /> },
+        { path: "/models/edit/:id", element: <EditGenerator /> },
 
-        
-        
-        { path: "model", element: <ProtectedRoute ><Model /></ProtectedRoute> },
-        { path: "/models/add", element: < AddGenerator />},
-        { path: "/models", element: < GeneratorList  />},
-        { path: "/models/edit/:id", element: < EditGenerator  />},
-
-        // request 
+        // Request routes
         { path: "request", element: <Request /> },
         { path: "/requests", element: <PurchaseRequests /> },
         { path: "/requests/:id", element: <RequestDetails /> },
 
+        // Ticket route
         { path: "ticket", element: <Ticket /> },
+
+        // Admin Role (Super Admin only)
         {
-          path: "adminRole", element: <ProtectedRoute allowedRoles={["superAdmin"]}>
-            <AdminRole />
-          </ProtectedRoute>
+          path: "adminRole", 
+          element: (
+            <ProtectedRoute allowedRoles={["superAdmin"]}>
+              <AdminRole />
+            </ProtectedRoute>
+          )
         },
-
-
-
       ],
     },
   ]);
 
   return (
     <>
-      <RouterProvider router={routes}></RouterProvider>
+      <RouterProvider router={routes} />
       <Toaster
         position="bottom-right"
         reverseOrder={false}

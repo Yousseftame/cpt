@@ -27,9 +27,10 @@ import {
   Filter, 
   MoreVertical,
   X,
-  AlertTriangle
+  AlertTriangle,
+  Eye
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { db } from "../../../service/firebase";
 import toast from "react-hot-toast";
 
@@ -105,7 +106,7 @@ export default function GeneratorList() {
     }
 
     setFilteredModels(filtered);
-    setPage(0); // Reset to first page when filters change
+    setPage(0);
   }, [searchTerm, categoryFilter, models]);
 
   const handleDelete = async () => {
@@ -150,7 +151,6 @@ export default function GeneratorList() {
 
   const categories = Array.from(new Set(models.map(m => m.category)));
 
-  // Get paginated data
   const paginatedModels = filteredModels.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
@@ -195,7 +195,6 @@ export default function GeneratorList() {
       {/* Filters Section */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Search */}
           <TextField
             placeholder="Search by name, SKU, or category..."
             value={searchTerm}
@@ -219,7 +218,6 @@ export default function GeneratorList() {
             }}
           />
 
-          {/* Category Filter */}
           <div className="flex items-center gap-2">
             <Filter size={20} className="text-gray-400" />
             <select
@@ -235,7 +233,6 @@ export default function GeneratorList() {
           </div>
         </div>
 
-        {/* Results Count */}
         <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
           <span className="font-medium">{filteredModels.length}</span>
           <span>results found</span>
@@ -337,7 +334,6 @@ export default function GeneratorList() {
           </Table>
         </div>
 
-        {/* Pagination */}
         <TablePagination
           component="div"
           count={filteredModels.length}
@@ -355,6 +351,15 @@ export default function GeneratorList() {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
+        <MenuItem 
+          onClick={() => {
+            if (selectedModel) navigate(`/models/view/${selectedModel.id}`);
+            handleMenuClose();
+          }}
+        >
+          <Eye size={16} className="mr-2" />
+          View Details
+        </MenuItem>
         <MenuItem 
           onClick={() => {
             if (selectedModel) navigate(`/models/edit/${selectedModel.id}`);
