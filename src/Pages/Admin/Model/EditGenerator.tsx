@@ -341,11 +341,11 @@ export default function EditGenerator() {
           </div>
 
           {/* Info Box */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          {/* <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
             <p className="text-sm text-amber-800">
               <strong>Note:</strong> Gallery images and troubleshooting PDFs management will be available in future updates.
             </p>
-          </div>
+          </div> */}
 
           {/* Action Buttons */}
           <div className="flex gap-3 justify-end pt-4">

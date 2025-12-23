@@ -305,11 +305,11 @@ export default function AddGenerator() {
           </div>
 
           {/* Info Box */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          {/* <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
               <strong>Note:</strong> Gallery images and troubleshooting PDFs can be added after creating the model.
             </p>
-          </div>
+          </div> */}
 
           {/* Action Buttons */}
           <div className="flex gap-3 justify-end pt-4">
