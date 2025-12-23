@@ -1,9 +1,9 @@
 import React from 'react'
 
-export default function SideBar() {
+export default function NavBar() {
   return (
     <div>
-      sidebar
+      NavBar
     </div>
   )
 }
