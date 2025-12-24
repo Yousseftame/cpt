@@ -12,7 +12,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  CircularProgress
+  
 } from "@mui/material";
 import {
   ArrowLeft,
@@ -28,6 +28,7 @@ import {
   CheckCircle2,
   AlertTriangle
 } from "lucide-react";
+import PagesLoader from "../../../components/shared/PagesLoader";
 
 interface TicketData {
   id: string;
@@ -175,14 +176,8 @@ const CustomerTickets = () => {
 
   if (loading) {
     return (
-      <Box sx={{ maxWidth: 1400, mx: "auto", p: { xs: 2, md: 3 } }}>
-        <div className="flex items-center justify-center min-h-96">
-          <div className="text-center">
-            <CircularProgress />
-            <p className="mt-4 text-gray-600">Loading tickets...</p>
-          </div>
-        </div>
-      </Box>
+      <PagesLoader text="Loading tickets..." />
+
     );
   }
 

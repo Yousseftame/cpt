@@ -1,8 +1,9 @@
 import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
-import { TextField, Button, Paper, Grid, Divider, Box, CircularProgress } from "@mui/material";
+import { TextField, Button, Paper, Grid, Divider, Box } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Save, UserCog } from "lucide-react";
 import { useCustomer } from "../../../store/MasterContext/CustomerContext";
+import PagesLoader from "../../../components/shared/PagesLoader";
 
 interface CustomerFormData {
   name: string;
@@ -96,12 +97,7 @@ export default function EditCustomer() {
 
   if (fetchLoading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <CircularProgress />
-          <p className="mt-4 text-gray-600">Loading customer data...</p>
-        </div>
-      </div>
+            <PagesLoader text="Loading customer data..." />
     );
   }
 

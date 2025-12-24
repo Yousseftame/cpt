@@ -4,7 +4,6 @@ import {
   Paper,
   Button,
   Chip,
-  CircularProgress,
   Box,
   Divider,
   Avatar,
@@ -25,6 +24,7 @@ import {
 import CustomerTicketsTab from "./CustomerTicketsTab";
 import { useCustomer } from "../../../store/MasterContext/CustomerContext";
 import CustomerUnitsTab from "./CustomerUnitsTab";
+import PagesLoader from "../../../components/shared/PagesLoader";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -110,12 +110,8 @@ export default function CustomerDetails() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <CircularProgress />
-          <p className="mt-4 text-gray-600">Loading customer details...</p>
-        </div>
-      </div>
+            <PagesLoader text="Loading customer details..." />
+    
     );
   }
 

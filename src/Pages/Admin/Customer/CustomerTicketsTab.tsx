@@ -4,6 +4,7 @@ import { db } from "../../../service/firebase";
 import { Button, Chip, Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { Ticket, Clock, AlertCircle } from "lucide-react";
+import PagesLoader from "../../../components/shared/PagesLoader";
 
 interface CustomerTicketsTabProps {
   customerId: string;
@@ -85,10 +86,7 @@ export default function CustomerTicketsTab({ customerId }: CustomerTicketsTabPro
 
   if (loading) {
     return (
-      <div className="text-center py-8">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-        <p className="mt-4 text-gray-600">Loading tickets...</p>
-      </div>
+      <PagesLoader text="Loading tickets..." />
     );
   }
 

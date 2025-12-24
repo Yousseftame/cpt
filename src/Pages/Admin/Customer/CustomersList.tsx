@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCustomer } from "../../../store/MasterContext/CustomerContext";
+import PagesLoader from "../../../components/shared/PagesLoader";
 
 export default function CustomersList() {
   const { customers, loading, fetchCustomers, deleteCustomer } = useCustomer();
@@ -124,12 +125,7 @@ export default function CustomersList() {
 
   if (loading && customers.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-          <p className="mt-4 text-gray-600">Loading customers...</p>
-        </div>
-      </div>
+      <PagesLoader text="Loading customers..." />
     );
   }
 

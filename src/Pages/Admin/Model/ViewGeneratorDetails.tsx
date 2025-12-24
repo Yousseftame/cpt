@@ -18,10 +18,11 @@ import {
   Paper, 
   Button, 
   Chip, 
-  CircularProgress, 
+ 
   Box,
   Divider 
 } from "@mui/material";
+import PagesLoader from "../../../components/shared/PagesLoader";
 
 interface GeneratorModel {
   id: string;
@@ -94,12 +95,7 @@ const formatDate = (timestamp: any) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <CircularProgress />
-          <p className="mt-4 text-gray-600">Loading model details...</p>
-        </div>
-      </div>
+      < PagesLoader text="Loading generator model data..." />
     );
   }
 

@@ -9,6 +9,7 @@ import ErrorAlert from '../../../components/shared/ErrorAlert';
 import AuthInput from '../../../components/shared/AuthInput';
 import AuthButton from '../../../components/shared/AuthButton';
 import { doc, getDoc } from 'firebase/firestore';
+import PagesLoader from '../../../components/shared/PagesLoader';
 
 
 const Login = () => {
@@ -101,12 +102,7 @@ const Login = () => {
 
   if (checkingAuth) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
+      <PagesLoader text="Preparing login page..." />
     );
   }
 

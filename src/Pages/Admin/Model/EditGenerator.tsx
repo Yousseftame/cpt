@@ -1,11 +1,12 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { TextField, Button, Paper,  Divider, CircularProgress, Box } from "@mui/material";
+import { TextField, Button, Paper,  Divider,  Box } from "@mui/material";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../service/firebase";
 import toast from "react-hot-toast";
 import { ArrowLeft, Save, Zap } from "lucide-react";
 import Grid from '@mui/material/Grid';
+import PagesLoader from "../../../components/shared/PagesLoader";
 
 
 
@@ -170,12 +171,7 @@ export default function EditGenerator() {
 
   if (fetchLoading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <CircularProgress />
-          <p className="mt-4 text-gray-600">Loading model data...</p>
-        </div>
-      </div>
+       <PagesLoader text="Loading generator model data..." />
     );
   }
 

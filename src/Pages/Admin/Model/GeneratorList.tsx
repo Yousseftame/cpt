@@ -33,6 +33,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { db } from "../../../service/firebase";
 import toast from "react-hot-toast";
+import PagesLoader from "../../../components/shared/PagesLoader";
 
 interface GeneratorModel {
   id: string;
@@ -164,12 +165,7 @@ export default function GeneratorList() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-          <p className="mt-4 text-gray-600">Loading models...</p>
-        </div>
-      </div>
+     <PagesLoader text="Loading generator models..." />
     );
   }
 
