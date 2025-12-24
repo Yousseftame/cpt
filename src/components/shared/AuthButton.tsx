@@ -20,11 +20,24 @@ const AuthButton: React.FC<AuthButtonProps> = ({
   disabled,
   ...props 
 }) => {
-  const baseClasses = "font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100";
+  const baseClasses = "font-bold py-3.5 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 relative overflow-hidden group tracking-wide";
   
   const variantClasses = {
-    primary: "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-indigo-300 hover:shadow-xl hover:shadow-indigo-400 hover:scale-[1.02] active:scale-[0.98]",
-    secondary: "bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md"
+    primary: `
+      bg-gradient-to-r from-[#588157] via-[#3a5a40] to-[#344e41]
+      text-white shadow-lg shadow-[#588157]/40
+      hover:shadow-xl hover:shadow-[#588157]/50
+      hover:scale-[1.02] active:scale-[0.98]
+      before:absolute before:inset-0 before:bg-gradient-to-r before:from-[#344e41] before:to-[#588157]
+      before:opacity-0 before:transition-opacity before:duration-300
+      hover:before:opacity-100
+    `,
+    secondary: `
+      bg-white border-2 border-[#a3b18a] text-[#344e41]
+      hover:bg-[#dad7cd]/30 hover:border-[#588157]
+      hover:shadow-md hover:shadow-[#588157]/20
+      active:scale-[0.98]
+    `
   };
 
   const widthClass = fullWidth ? 'w-full' : '';
@@ -35,16 +48,23 @@ const AuthButton: React.FC<AuthButtonProps> = ({
       className={`${baseClasses} ${variantClasses[variant]} ${widthClass}`}
       {...props}
     >
-      {loading ? (
-        <>
-          <Loader className="animate-spin" size={20} />
-          {loadingText}
-        </>
-      ) : (
-        <>
-          {children}
-          {icon && icon}
-        </>
+      <span className="relative z-10 flex items-center justify-center gap-2.5">
+        {loading ? (
+          <>
+            <Loader className="animate-spin" size={20} strokeWidth={2.5} />
+            {loadingText}
+          </>
+        ) : (
+          <>
+            {children}
+            {icon && <span className="transform transition-transform duration-300 group-hover:translate-x-1">{icon}</span>}
+          </>
+        )}
+      </span>
+      
+      {/* Shimmer effect on hover */}
+      {variant === 'primary' && !disabled && !loading && (
+        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
       )}
     </button>
   );

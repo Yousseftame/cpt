@@ -1,4 +1,4 @@
-import React, {  type ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 
 interface AuthCardWrapperProps {
   children: ReactNode;
@@ -18,14 +18,14 @@ const AuthCardWrapper: React.FC<AuthCardWrapperProps> = ({
       {/* Logo/Header */}
       <div className="text-center mb-8">
         {icon && (
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl mb-4 transform transition-transform hover:scale-110">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#588157] via-[#3a5a40] to-[#344e41] rounded-2xl mb-6 transform transition-all duration-300 hover:scale-110 hover:rotate-3 shadow-lg shadow-[#588157]/30">
             {icon}
           </div>
         )}
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-[#344e41] via-[#3a5a40] to-[#588157] bg-clip-text text-transparent mb-3 tracking-tight">
           {title}
         </h1>
-        <p className="text-gray-600 text-sm">{subtitle}</p>
+        <p className="text-[#3a5a40]/70 text-sm font-medium">{subtitle}</p>
       </div>
 
       {/* Content */}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Sparkles } from 'lucide-react';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth, db } from '../../../service/firebase';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +10,6 @@ import AuthInput from '../../../components/shared/AuthInput';
 import AuthButton from '../../../components/shared/AuthButton';
 import { doc, getDoc } from 'firebase/firestore';
 import PagesLoader from '../../../components/shared/PagesLoader';
-
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -50,19 +49,19 @@ const Login = () => {
         toast.error('Please verify your email first.', {
           style: {
             borderRadius: '10px',
-            background: '#333',
-            color: '#fff',
+            background: '#344e41',
+            color: '#dad7cd',
           },
         });
         return;
       }
 
       // Success - navigate to dashboard
-      toast.success('Login successful!', {
+      toast.success('Welcome back!', {
         style: {
           borderRadius: '10px',
-          background: '#333',
-          color: '#fff',
+          background: '#588157',
+          color: 'white',
         },
       });
 
@@ -89,7 +88,6 @@ const Login = () => {
 
   useEffect(() => {
     // Sign out any authenticated user when landing on login page
-    // This ensures users ALWAYS see the login form and must enter credentials
     const signOutUser = async () => {
       if (auth.currentUser) {
         await signOut(auth);
@@ -101,21 +99,16 @@ const Login = () => {
   }, []);
 
   if (checkingAuth) {
-    return (
-      <PagesLoader text="Preparing login page..." />
-    );
+    return <PagesLoader text="Preparing login page..." />;
   }
 
   return (
-
     <AuthCardWrapper
       title="Welcome Back"
       subtitle="Sign in to continue to your account"
-      icon={<Lock className="text-white" size={32} />}
+      icon={<Sparkles className="text-white" size={28} strokeWidth={2.5} />}
     >
       <ErrorAlert message={error} onClose={() => setError('')} />
-
-
 
       <form onSubmit={handleLogin} className="space-y-6">
         <AuthInput
@@ -124,7 +117,7 @@ const Login = () => {
           type="email"
           value={email}
           onChange={(e: any) => setEmail(e.target.value)}
-          placeholder="Enter your email"
+          placeholder="you@example.com"
           required
           disabled={loading}
         />
@@ -145,7 +138,7 @@ const Login = () => {
           <button
             onClick={() => navigate('/forget-password')}
             type="button"
-            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+            className="text-sm text-[#588157] hover:text-[#344e41] font-semibold transition-colors duration-300 hover:underline underline-offset-4"
             disabled={loading}
           >
             Forgot Password?
@@ -156,7 +149,7 @@ const Login = () => {
           type="submit"
           loading={loading}
           loadingText="Signing in..."
-          icon={<ArrowRight size={20} />}
+          icon={<ArrowRight size={20} strokeWidth={2.5} />}
         >
           Sign In
         </AuthButton>
@@ -164,19 +157,22 @@ const Login = () => {
 
       <div className="relative my-8">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-300"></div>
+          <div className="w-full border-t-2 border-[#dad7cd]"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-4 text-[#a3b18a] bg-white font-medium">or</span>
         </div>
       </div>
 
-      <p className="text-center text-sm text-gray-600 mt-12">
+      <p className="text-center text-sm text-[#3a5a40] mt-8">
         Don't have an account?{' '}
         <button
           onClick={() => navigate('/register')}
           type="button"
-          className="text-indigo-600 hover:text-indigo-800 font-semibold transition-colors disabled:opacity-50"
+          className="text-[#588157] hover:text-[#344e41] font-bold transition-all duration-300 disabled:opacity-50 hover:underline underline-offset-4"
           disabled={loading}
         >
-          Sign up
+          Create Account
         </button>
       </p>
     </AuthCardWrapper>

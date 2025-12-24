@@ -1,160 +1,962 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  collection,
+  getDocs,
+  query,
+  orderBy,
+} from "firebase/firestore";
 import { db } from "../../../service/firebase";
-import { Button } from "@mui/material";
-import AssignUnitsSection from "./AssignUnitsSection";
+import {
+  Button,
+  TextField,
+  Paper,
+  Box,
+  Divider,
+  Avatar,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from "@mui/material";
+import {
+  ArrowLeft,
+  User,
+  Phone,
+  Calendar,
+  Package,
+  CheckCircle2,
+  MessageSquare,
+  Plus,
+  Hash,
+  Edit,
+  Trash2,
+  AlertCircle,
+  Clock,
+  XCircle,
+  ChevronDown,
+  AlertTriangle,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import PagesLoader from "../../../components/shared/PagesLoader";
 
-const RequestDetails = () => {
+interface GeneratorModel {
+  id: string;
+  name: string;
+  sku: string;
+}
+
+interface AssignedUnit {
+  modelId: string;
+  serial: string;
+  assignedAt: string;
+}
+
+interface InternalNote {
+  note: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export default function RequestDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [request, setRequest] = useState<any>(null);
+  const [models, setModels] = useState<GeneratorModel[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Dialogs state
+  const [assignDialog, setAssignDialog] = useState(false);
+  const [editUnitDialog, setEditUnitDialog] = useState(false);
+  const [deleteUnitDialog, setDeleteUnitDialog] = useState(false);
+  const [deleteNoteDialog, setDeleteNoteDialog] = useState(false);
+  const [noteDialog, setNoteDialog] = useState(false);
 
-    // fetch request details
+  // Form state
+  const [selectedModel, setSelectedModel] = useState("");
+  const [serialNumber, setSerialNumber] = useState("");
+  const [noteText, setNoteText] = useState("");
+  const [selectedUnitIndex, setSelectedUnitIndex] = useState<number>(-1);
+  const [selectedNoteIndex, setSelectedNoteIndex] = useState<number>(-1);
+
   const fetchRequest = async () => {
-    const docRef = doc(db, "purchaseRequests", id!);
-    const snapshot = await getDoc(docRef);
-
-    if (snapshot.exists()) {
-      setRequest({ id: snapshot.id, ...snapshot.data() });
-    }
-
-    setLoading(false);
-  };
-
-
-  // review action case
-  const moveToReview = async () => {
     if (!id) return;
 
-    const docRef = doc(db, "purchaseRequests", id);
+    try {
+      const docRef = doc(db, "purchaseRequests", id);
+      const snapshot = await getDoc(docRef);
 
-    await updateDoc(docRef, {
-      status: "in_review",
-      inReviewAt: serverTimestamp()
-    });
-
-    // refresh request
-    fetchRequest();
+      if (snapshot.exists()) {
+        setRequest({ id: snapshot.id, ...snapshot.data() });
+      } else {
+        toast.error("Request not found");
+        navigate("/requests");
+      }
+    } catch (error) {
+      console.error("Error fetching request:", error);
+      toast.error("Failed to load request details");
+    } finally {
+      setLoading(false);
+    }
   };
 
-
-
-  // contacted action case
-  const markAsContacted = async () => {
-  if (!id) return;
-
-  const docRef = doc(db, "purchaseRequests", id);
-
-  await updateDoc(docRef, {
-    status: "contacted",
-    contactedAt: serverTimestamp(),
-    contactMethod: "phone" // لاحقاً ممكن نخليها اختيار
-  });
-
-  fetchRequest();
-};
-
- 
-  // approve action case
-const approveRequest = async () => {
-  if (!id) return;
-
-  const docRef = doc(db, "purchaseRequests", id);
-
-  await updateDoc(docRef, {
-    status: "approved",
-    approvedAt: serverTimestamp()
-  });
-
-  fetchRequest();
-};
-
-// reject action case
-const rejectRequest = async () => {
-  if (!id) return;
-
-  const docRef = doc(db, "purchaseRequests", id);
-
-  await updateDoc(docRef, {
-    status: "rejected",
-    rejectedAt: serverTimestamp()
-  });
-
-  fetchRequest();
-};
-
-
-
+  const fetchModels = async () => {
+    try {
+      const q = query(collection(db, "generatorModels"), orderBy("createdAt", "desc"));
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        name: doc.data().name,
+        sku: doc.data().sku,
+      }));
+      setModels(data);
+    } catch (error) {
+      console.error("Error fetching models:", error);
+    }
+  };
 
   useEffect(() => {
     fetchRequest();
+    fetchModels();
   }, [id]);
 
-  if (loading) return <p>Loading...</p>;
+  const handleStatusChange = async (newStatus: string) => {
+    if (!id) return;
 
-  if (!request) return <p className="text-center mt-10">Request Not Found</p>;
+    try {
+      const docRef = doc(db, "purchaseRequests", id);
+      await updateDoc(docRef, {
+        status: newStatus,
+        [`${newStatus}At`]: new Date().toISOString(),
+      });
+      toast.success(`Status updated to ${newStatus}`);
+      fetchRequest();
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error("Failed to update status");
+    }
+  };
+
+  const handleAssignUnit = async () => {
+    if (!selectedModel || !serialNumber.trim()) {
+      toast.error("Please select a model and enter a serial number");
+      return;
+    }
+
+    try {
+      const docRef = doc(db, "purchaseRequests", id!);
+      await updateDoc(docRef, {
+        assignedUnits: arrayUnion({
+          modelId: selectedModel,
+          serial: serialNumber,
+          assignedAt: new Date().toISOString(),
+        }),
+      });
+
+      toast.success("Unit assigned successfully!");
+      setAssignDialog(false);
+      setSelectedModel("");
+      setSerialNumber("");
+      fetchRequest();
+    } catch (error) {
+      console.error("Error assigning unit:", error);
+      toast.error("Failed to assign unit");
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!noteText.trim()) {
+      toast.error("Please enter a note");
+      return;
+    }
+
+    try {
+      const docRef = doc(db, "purchaseRequests", id!);
+      await updateDoc(docRef, {
+        internalNotes: arrayUnion({
+          note: noteText,
+          createdAt: new Date().toISOString(),
+          createdBy: "Admin", // Replace with actual user name
+        }),
+      });
+
+      toast.success("Note added successfully!");
+      setNoteDialog(false);
+      setNoteText("");
+      fetchRequest();
+    } catch (error) {
+      console.error("Error adding note:", error);
+      toast.error("Failed to add note");
+    }
+  };
+
+  const handleEditUnit = async () => {
+    if (!selectedModel || !serialNumber.trim() || selectedUnitIndex === -1) {
+      toast.error("Please select a model and enter a serial number");
+      return;
+    }
+
+    try {
+      const updatedUnits = [...request.assignedUnits];
+      updatedUnits[selectedUnitIndex] = {
+        modelId: selectedModel,
+        serial: serialNumber,
+        assignedAt: updatedUnits[selectedUnitIndex].assignedAt,
+      };
+
+      const docRef = doc(db, "purchaseRequests", id!);
+      await updateDoc(docRef, {
+        assignedUnits: updatedUnits,
+      });
+
+      toast.success("Unit updated successfully!");
+      setEditUnitDialog(false);
+      setSelectedModel("");
+      setSerialNumber("");
+      setSelectedUnitIndex(-1);
+      fetchRequest();
+    } catch (error) {
+      console.error("Error updating unit:", error);
+      toast.error("Failed to update unit");
+    }
+  };
+
+  const handleDeleteUnit = async () => {
+    if (selectedUnitIndex === -1) return;
+
+    try {
+      const updatedUnits = request.assignedUnits.filter(
+        (_: any, index: number) => index !== selectedUnitIndex
+      );
+
+      const docRef = doc(db, "purchaseRequests", id!);
+      await updateDoc(docRef, {
+        assignedUnits: updatedUnits,
+      });
+
+      toast.success("Unit removed successfully!");
+      setDeleteUnitDialog(false);
+      setSelectedUnitIndex(-1);
+      fetchRequest();
+    } catch (error) {
+      console.error("Error removing unit:", error);
+      toast.error("Failed to remove unit");
+    }
+  };
+
+  const handleDeleteNote = async () => {
+    if (selectedNoteIndex === -1) return;
+
+    try {
+      const updatedNotes = request.internalNotes.filter(
+        (_: any, index: number) => index !== selectedNoteIndex
+      );
+
+      const docRef = doc(db, "purchaseRequests", id!);
+      await updateDoc(docRef, {
+        internalNotes: updatedNotes,
+      });
+
+      toast.success("Note deleted successfully!");
+      setDeleteNoteDialog(false);
+      setSelectedNoteIndex(-1);
+      fetchRequest();
+    } catch (error) {
+      console.error("Error deleting note:", error);
+      toast.error("Failed to delete note");
+    }
+  };
+
+  const openEditUnitDialog = (unit: AssignedUnit, index: number) => {
+    setSelectedUnitIndex(index);
+    setSelectedModel(unit.modelId);
+    setSerialNumber(unit.serial);
+    setEditUnitDialog(true);
+  };
+
+  const openDeleteUnitDialog = (index: number) => {
+    setSelectedUnitIndex(index);
+    setDeleteUnitDialog(true);
+  };
+
+  const openDeleteNoteDialog = (index: number) => {
+    setSelectedNoteIndex(index);
+    setDeleteNoteDialog(true);
+  };
+
+  const getModelName = (modelId: string) => {
+    const model = models.find((m) => m.id === modelId);
+    return model?.name || "Unknown Model";
+  };
+
+  const getModelSKU = (modelId: string) => {
+    const model = models.find((m) => m.id === modelId);
+    return model?.sku || "N/A";
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "new":
+        return <AlertCircle size={20} />;
+      case "in_review":
+        return <Clock size={20} />;
+      case "contacted":
+        return <Phone size={20} />;
+      case "approved":
+        return <CheckCircle2 size={20} />;
+      case "rejected":
+        return <XCircle size={20} />;
+      case "completed":
+        return <Package size={20} />;
+      default:
+        return <AlertCircle size={20} />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "new":
+        return { bgcolor: "#EEF2FF", color: "#4F46E5" };
+      case "in_review":
+        return { bgcolor: "#FEF3C7", color: "#F59E0B" };
+      case "contacted":
+        return { bgcolor: "#F0F9FF", color: "#3B82F6" };
+      case "approved":
+        return { bgcolor: "#F6FFED", color: "#6CC464" };
+      case "rejected":
+        return { bgcolor: "#FFF1F0", color: "#FF5F5E" };
+      case "completed":
+        return { bgcolor: "#F3F4F6", color: "#6B7280" };
+      default:
+        return { bgcolor: "#F3F4F6", color: "#6B7280" };
+    }
+  };
+
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return "N/A";
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "N/A";
+    }
+  };
+
+  if (loading) {
+    return <PagesLoader text="Loading request details..." />;
+  }
+
+  if (!request) {
+    return null;
+  }
+
+  const statusStyle = getStatusColor(request.status);
 
   return (
-    <div className="p-8">
-
-      <h2 className="text-2xl font-semibold mb-6">Request Details</h2>
-
-      <p><strong>Customer Name:</strong> {request.customerName}</p>
-      <p><strong>Phone:</strong> {request.customerPhone}</p>
-      <p><strong>Units:</strong> {request.requestedUnits}</p>
-      <p><strong>Status:</strong> {request.status}</p>
-      <p><strong>Created At:</strong> {String(request.createdAt?.toDate?.() || "")}</p>
-
-      {/* Action */}
-      {request.status === "new" && (
+    <Box sx={{ maxWidth: 1400, mx: "auto", p: { xs: 2, md: 3 } }}>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
         <Button
-          className="mt-6"
-          variant="contained"
-          onClick={moveToReview}
+          variant="outlined"
+          startIcon={<ArrowLeft size={20} />}
+          onClick={() => navigate("/requests")}
+          sx={{
+            textTransform: "none",
+            mb: 2,
+            borderRadius: 2,
+          }}
         >
-          Move to Review
+          Back to Requests
         </Button>
-      )}
-      {request.status === "in_review" && (
-  <Button
-    className="mt-4"
-    variant="contained"
-    onClick={markAsContacted}
-  >
-    Mark as Contacted
-  </Button>
-)}
-{request.status === "contacted" && (
-  <div className="flex gap-4 mt-4">
-    <Button
-      variant="contained"
-      color="success"
-      onClick={approveRequest}
-    >
-      Approve
-    </Button>
 
-    <Button
-      variant="contained"
-      color="error"
-      onClick={rejectRequest}
-    >
-      Reject
-    </Button>
-  </div>
-)}
-{request.status === "approved" && (
-  <AssignUnitsSection request={request} />
-)}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", sm: "center" },
+            flexDirection: { xs: "column", sm: "row" },
+            gap: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Avatar
+              sx={{
+                bgcolor: "#4F46E5",
+                width: 64,
+                height: 64,
+                fontSize: "1.5rem",
+              }}
+            >
+              {request.customerName.charAt(0).toUpperCase()}
+            </Avatar>
+            <Box>
+              <h1 className="text-3xl font-bold text-gray-800">Purchase Request</h1>
+              <p className="text-gray-600 mt-1">Request ID: {id}</p>
+            </Box>
+          </Box>
 
+          {/* Status Dropdown */}
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <Select
+              value={request.status}
+              onChange={(e) => handleStatusChange(e.target.value)}
+              sx={{
+                bgcolor: statusStyle.bgcolor,
+                color: statusStyle.color,
+                fontWeight: 600,
+                fontSize: "1rem",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  border: "none",
+                },
+                borderRadius: 2,
+                py: 1.5,
+              }}
+              IconComponent={ChevronDown}
+            >
+              <MenuItem value="new">
+                <div className="flex items-center gap-2">
+                  <AlertCircle size={18} />
+                  New
+                </div>
+              </MenuItem>
+              <MenuItem value="in_review">
+                <div className="flex items-center gap-2">
+                  <Clock size={18} />
+                  In Review
+                </div>
+              </MenuItem>
+              <MenuItem value="contacted">
+                <div className="flex items-center gap-2">
+                  <Phone size={18} />
+                  Contacted
+                </div>
+              </MenuItem>
+              <MenuItem value="approved">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={18} />
+                  Approved
+                </div>
+              </MenuItem>
+              <MenuItem value="rejected">
+                <div className="flex items-center gap-2">
+                  <XCircle size={18} />
+                  Rejected
+                </div>
+              </MenuItem>
+              <MenuItem value="completed">
+                <div className="flex items-center gap-2">
+                  <Package size={18} />
+                  Completed
+                </div>
+              </MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
 
+      {/* Quick Info Cards */}
+      <Box
+        sx={{
+          display: "grid",
+          gap: 3,
+          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" },
+          mb: 4,
+        }}
+      >
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            border: "1px solid",
+            borderColor: "grey.200",
+            borderRadius: 3,
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            color: "white",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Package size={32} />
+            <Box>
+              <p className="text-sm opacity-90">Requested Units</p>
+              <p className="text-3xl font-bold">{request.requestedUnits}</p>
+            </Box>
+          </Box>
+        </Paper>
 
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            border: "1px solid",
+            borderColor: "grey.200",
+            borderRadius: 3,
+            background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+            color: "white",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <CheckCircle2 size={32} />
+            <Box>
+              <p className="text-sm opacity-90">Assigned Units</p>
+              <p className="text-3xl font-bold">{request.assignedUnits?.length || 0}</p>
+            </Box>
+          </Box>
+        </Paper>
 
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            border: "1px solid",
+            borderColor: "grey.200",
+            borderRadius: 3,
+            background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+            color: "white",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <MessageSquare size={32} />
+            <Box>
+              <p className="text-sm opacity-90">Internal Notes</p>
+              <p className="text-3xl font-bold">{request.internalNotes?.length || 0}</p>
+            </Box>
+          </Box>
+        </Paper>
+      </Box>
 
-    </div>
+      {/* Main Content */}
+      <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", lg: "1fr 2fr" } }}>
+        {/* Customer Information */}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 4,
+            border: "1px solid",
+            borderColor: "grey.200",
+            borderRadius: 3,
+            height: "fit-content",
+          }}
+        >
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Customer Information</h2>
+          <Divider sx={{ mb: 3 }} />
+
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <User size={16} className="text-gray-500" />
+                <span className="text-sm text-gray-500">Name</span>
+              </Box>
+              <p className="text-gray-900 font-medium">{request.customerName}</p>
+            </Box>
+
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <Phone size={16} className="text-gray-500" />
+                <span className="text-sm text-gray-500">Phone</span>
+              </Box>
+              <p className="text-gray-900 font-medium">{request.customerPhone}</p>
+            </Box>
+
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <Package size={16} className="text-gray-500" />
+                <span className="text-sm text-gray-500">Model Requested</span>
+              </Box>
+              <p className="text-gray-900 font-medium">{request.modelId}</p>
+            </Box>
+
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <Calendar size={16} className="text-gray-500" />
+                <span className="text-sm text-gray-500">Created At</span>
+              </Box>
+              <p className="text-gray-900 font-medium">
+                {formatDate(request.createdAt?.toDate?.() || request.createdAt)}
+              </p>
+            </Box>
+          </Box>
+        </Paper>
+
+        {/* Right Column - Assigned Units & Notes */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          {/* Assigned Units */}
+          <Paper
+            elevation={0}
+            sx={{
+              p: 4,
+              border: "1px solid",
+              borderColor: "grey.200",
+              borderRadius: 3,
+            }}
+          >
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+              <h2 className="text-xl font-semibold text-gray-800">Assigned Units</h2>
+              {request.status === "approved" && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<Plus size={16} />}
+                  onClick={() => setAssignDialog(true)}
+                  sx={{
+                    textTransform: "none",
+                    bgcolor: "#4F46E5",
+                    "&:hover": { bgcolor: "#4338CA" },
+                  }}
+                >
+                  Assign Unit
+                </Button>
+              )}
+            </Box>
+            <Divider sx={{ mb: 3 }} />
+
+            {!request.assignedUnits || request.assignedUnits.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                <Package size={48} className="mx-auto mb-2 opacity-50" />
+                <p className="text-lg">No units assigned yet</p>
+                {request.status === "approved" && (
+                  <p className="text-sm">Click "Assign Unit" to add generator units</p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {request.assignedUnits.map((unit: AssignedUnit, index: number) => (
+                  <div
+                    key={index}
+                    className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-800 mb-2">
+                          {getModelName(unit.modelId)}
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          <Chip
+                            label={getModelSKU(unit.modelId)}
+                            size="small"
+                            sx={{ bgcolor: "#EEF2FF", color: "#4F46E5" }}
+                          />
+                          <Chip
+                            icon={<Hash size={14} />}
+                            label={unit.serial}
+                            size="small"
+                            sx={{ bgcolor: "#F6FFED", color: "#6CC464" }}
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Assigned: {formatDate(unit.assignedAt)}
+                        </p>
+                      </div>
+                      {request.status === "approved" && (
+                        <div className="flex gap-1">
+                          <IconButton
+                            size="small"
+                            onClick={() => openEditUnitDialog(unit, index)}
+                            sx={{ color: "#4F46E5" }}
+                          >
+                            <Edit size={16} />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => openDeleteUnitDialog(index)}
+                            sx={{ color: "#DC2626" }}
+                          >
+                            <Trash2 size={16} />
+                          </IconButton>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Paper>
+
+          {/* Internal Notes */}
+          <Paper
+            elevation={0}
+            sx={{
+              p: 4,
+              border: "1px solid",
+              borderColor: "grey.200",
+              borderRadius: 3,
+            }}
+          >
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+              <h2 className="text-xl font-semibold text-gray-800">Internal Notes</h2>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Plus size={16} />}
+                onClick={() => setNoteDialog(true)}
+                sx={{ textTransform: "none" }}
+              >
+                Add Note
+              </Button>
+            </Box>
+            <Divider sx={{ mb: 3 }} />
+
+            {!request.internalNotes || request.internalNotes.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                <MessageSquare size={48} className="mx-auto mb-2 opacity-50" />
+                <p className="text-lg">No notes yet</p>
+                <p className="text-sm">Add internal notes to track this request</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {request.internalNotes.map((note: InternalNote, index: number) => (
+                  <div
+                    key={index}
+                    className="border border-gray-200 rounded-lg p-4 bg-amber-50 hover:bg-amber-100 transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <p className="text-gray-800 mb-2">{note.note}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <span className="font-medium">{note.createdBy}</span>
+                          <span>•</span>
+                          <span>{formatDate(note.createdAt)}</span>
+                        </div>
+                      </div>
+                      <IconButton
+                        size="small"
+                        onClick={() => openDeleteNoteDialog(index)}
+                        sx={{ color: "#DC2626" }}
+                      >
+                        <Trash2 size={16} />
+                      </IconButton>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Paper>
+        </Box>
+      </Box>
+
+      {/* Assign Unit Dialog */}
+      <Dialog open={assignDialog} onClose={() => setAssignDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <div className="flex items-center gap-2">
+            <Package className="text-indigo-600" size={24} />
+            <span>Assign Generator Unit</span>
+          </div>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 2 }}>
+            <FormControl fullWidth>
+              <InputLabel>Select Model</InputLabel>
+              <Select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                label="Select Model"
+              >
+                {models.map((model) => (
+                  <MenuItem key={model.id} value={model.id}>
+                    {model.name} ({model.sku})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <TextField
+              fullWidth
+              label="Serial Number"
+              value={serialNumber}
+              onChange={(e) => setSerialNumber(e.target.value)}
+              placeholder="Enter unit serial number"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setAssignDialog(false)} sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAssignUnit}
+            variant="contained"
+            sx={{
+              textTransform: "none",
+              bgcolor: "#4F46E5",
+              "&:hover": { bgcolor: "#4338CA" },
+            }}
+          >
+            Assign Unit
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Note Dialog */}
+      <Dialog open={noteDialog} onClose={() => setNoteDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <div className="flex items-center gap-2">
+            <MessageSquare className="text-indigo-600" size={24} />
+            <span>Add Internal Note</span>
+          </div>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              label="Note"
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="Add internal note about this request..."
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setNoteDialog(false)} sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddNote}
+            variant="contained"
+            sx={{
+              textTransform: "none",
+              bgcolor: "#4F46E5",
+              "&:hover": { bgcolor: "#4338CA" },
+            }}
+          >
+            Add Note
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Unit Dialog */}
+      <Dialog open={editUnitDialog} onClose={() => setEditUnitDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <div className="flex items-center gap-2">
+            <Edit className="text-indigo-600" size={24} />
+            <span>Edit Generator Unit</span>
+          </div>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 2 }}>
+            <FormControl fullWidth>
+              <InputLabel>Select Model</InputLabel>
+              <Select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                label="Select Model"
+              >
+                {models.map((model) => (
+                  <MenuItem key={model.id} value={model.id}>
+                    {model.name} ({model.sku})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <TextField
+              fullWidth
+              label="Serial Number"
+              value={serialNumber}
+              onChange={(e) => setSerialNumber(e.target.value)}
+              placeholder="Enter unit serial number"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setEditUnitDialog(false)} sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleEditUnit}
+            variant="contained"
+            sx={{
+              textTransform: "none",
+              bgcolor: "#4F46E5",
+              "&:hover": { bgcolor: "#4338CA" },
+            }}
+          >
+            Update Unit
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Unit Dialog */}
+      <Dialog open={deleteUnitDialog} onClose={() => setDeleteUnitDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle className="text-red-600">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={24} />
+            <span>Remove Unit</span>
+          </div>
+        </DialogTitle>
+        <DialogContent>
+          <p className="text-gray-700 mb-4">
+            Are you sure you want to remove this assigned unit?
+          </p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm text-red-800">
+              <strong>Warning:</strong> This action cannot be undone.
+            </p>
+          </div>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setDeleteUnitDialog(false)} sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteUnit}
+            variant="contained"
+            color="error"
+            sx={{ textTransform: "none" }}
+          >
+            Remove Unit
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Note Dialog */}
+      <Dialog open={deleteNoteDialog} onClose={() => setDeleteNoteDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle className="text-red-600">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={24} />
+            <span>Delete Note</span>
+          </div>
+        </DialogTitle>
+        <DialogContent>
+          <p className="text-gray-700 mb-4">
+            Are you sure you want to delete this internal note?
+          </p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm text-red-800">
+              <strong>Warning:</strong> This action cannot be undone.
+            </p>
+          </div>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setDeleteNoteDialog(false)} sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteNote}
+            variant="contained"
+            color="error"
+            sx={{ textTransform: "none" }}
+          >
+            Delete Note
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
-};
-
-export default RequestDetails;
+}
