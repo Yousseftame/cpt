@@ -35,7 +35,7 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
   const [editDialog, setEditDialog] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState<PurchasedUnit | null>(null);
-  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+  // const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [formData, setFormData] = useState({
     modelId: "",
     serial: "",
@@ -43,6 +43,7 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
 
   useEffect(() => {
     fetchModels();
+    
   }, []);
 
   const fetchModels = async () => {
@@ -131,9 +132,9 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
     }
   };
 
-  const openEditDialog = (unit: PurchasedUnit, index: number) => {
+  const openEditDialog = (unit: PurchasedUnit) => {
     setSelectedUnit(unit);
-    setSelectedIndex(index);
+    // setSelectedIndex(index);
     setFormData({
       modelId: unit.modelId,
       serial: unit.serial,
@@ -213,7 +214,7 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
                 <div className="flex gap-1">
                   <IconButton
                     size="small"
-                    onClick={() => openEditDialog(unit, index)}
+                    onClick={() => openEditDialog(unit)}
                     sx={{ color: "#4F46E5" }}
                   >
                     <Edit size={16} />
