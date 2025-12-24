@@ -7,7 +7,6 @@ import MasterLayout from "./layouts/MasterLayout/MasterLayout";
 import Dashboard from "./Pages/Dashbaord/Dashboard";
 import { Toaster } from "react-hot-toast";
 import ResetPassword from "./Pages/Auth/ResetPassword/ResetPassword";
-import Model from "./Pages/Admin/Model/Model";
 import Request from "./Pages/Admin/Request/Request";
 import Ticket from "./Pages/Admin/Ticket/Ticket";
 import AdminRole from "./Pages/Admin/AdminRole/AdminRole";
@@ -71,14 +70,7 @@ function App() {
         { path: "/customer/:id/tickets", element: <CustomerTickets /> },
 
         // Model/Generator routes
-        { 
-          path: "model", 
-          element: (
-            <ProtectedRoute>
-              <Model />
-            </ProtectedRoute>
-          ) 
-        },
+       
         { path: "/models/add", element: <AddGenerator /> },
         { path: "/models", element: <GeneratorList /> },
         { path: "/models/view/:id", element: <ViewGeneratorDetails /> },
