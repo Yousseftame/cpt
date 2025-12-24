@@ -19,6 +19,7 @@ import toast from "react-hot-toast";
 interface CustomerUnitsTabProps {
   customerId: string;
   units: PurchasedUnit[];
+  onUnitsUpdate?: () => void;
 }
 
 interface GeneratorModel {
@@ -27,7 +28,7 @@ interface GeneratorModel {
   sku: string;
 }
 
-export default function CustomerUnitsTab({ customerId, units }: CustomerUnitsTabProps) {
+export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: CustomerUnitsTabProps) {
   const { assignUnit, removeUnit, updateUnit } = useCustomer();
   const [models, setModels] = useState<GeneratorModel[]>([]);
   const [assignDialog, setAssignDialog] = useState(false);
@@ -47,9 +48,9 @@ export default function CustomerUnitsTab({ customerId, units }: CustomerUnitsTab
   const fetchModels = async () => {
     try {
       const q = query(
-  collection(db, "generatorModels"),
-  orderBy("createdAt", "desc")
-);
+        collection(db, "generatorModels"),
+        orderBy("createdAt", "desc")
+      );
       const snapshot = await getDocs(q);
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -77,6 +78,11 @@ export default function CustomerUnitsTab({ customerId, units }: CustomerUnitsTab
       await assignUnit(customerId, newUnit);
       setAssignDialog(false);
       setFormData({ modelId: "", serial: "" });
+      
+      // Refresh customer data
+      if (onUnitsUpdate) {
+        onUnitsUpdate();
+      }
     } catch (error) {
       console.error("Error assigning unit:", error);
     }
@@ -98,6 +104,11 @@ export default function CustomerUnitsTab({ customerId, units }: CustomerUnitsTab
       setEditDialog(false);
       setSelectedUnit(null);
       setFormData({ modelId: "", serial: "" });
+      
+      // Refresh customer data
+      if (onUnitsUpdate) {
+        onUnitsUpdate();
+      }
     } catch (error) {
       console.error("Error updating unit:", error);
     }
@@ -110,6 +121,11 @@ export default function CustomerUnitsTab({ customerId, units }: CustomerUnitsTab
       await removeUnit(customerId, selectedUnit);
       setDeleteDialog(false);
       setSelectedUnit(null);
+      
+      // Refresh customer data
+      if (onUnitsUpdate) {
+        onUnitsUpdate();
+      }
     } catch (error) {
       console.error("Error removing unit:", error);
     }

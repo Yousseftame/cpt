@@ -56,8 +56,20 @@ export default function CustomerDetails() {
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
 
+  // Function to refresh customer data
+  const refreshCustomerData = async () => {
+    if (!id) return;
+    
+    try {
+      const data = await getCustomerById(id);
+      if (data) {
+        setCustomer(data);
+      }
+    } catch (error) {
+      console.error("Error refreshing customer:", error);
+    }
+  };
 
-  
   useEffect(() => {
     const fetchCustomer = async () => {
       if (!id) return;
@@ -351,7 +363,11 @@ export default function CustomerDetails() {
 
           <Box sx={{ px: 4 }}>
             <TabPanel value={tabValue} index={0}>
-              <CustomerUnitsTab customerId={id!} units={customer.purchasedUnits || []} />
+              <CustomerUnitsTab 
+                customerId={id!} 
+                units={customer.purchasedUnits || []}
+                onUnitsUpdate={refreshCustomerData}
+              />
             </TabPanel>
             <TabPanel value={tabValue} index={1}>
               <CustomerTicketsTab customerId={id!} />
