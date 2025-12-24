@@ -1,31 +1,56 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
-import { TextField, Button, Paper,  Divider, Box } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, UserPlus } from "lucide-react";
+import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
+import { TextField, Button, Paper, Grid, Divider, Box, CircularProgress } from "@mui/material";
+import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Save, UserCog } from "lucide-react";
 import { useCustomer } from "../../../store/MasterContext/CustomerContext";
-import Grid from '@mui/material/Grid';
 
 interface CustomerFormData {
   name: string;
   email: string;
-  password: string;
   phone: string;
   address: string;
 }
 
-export default function CreateCustomer() {
+export default function EditCustomer() {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { createCustomer } = useCustomer();
+  const { getCustomerById, updateCustomer } = useCustomer();
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
   const [formData, setFormData] = useState<CustomerFormData>({
     name: "",
     email: "",
-    password: "",
     phone: "",
     address: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const fetchCustomer = async () => {
+      if (!id) return;
+
+      try {
+        const customer = await getCustomerById(id);
+        if (customer) {
+          setFormData({
+            name: customer.name,
+            email: customer.email,
+            phone: customer.phone,
+            address: customer.address,
+          });
+        } else {
+          navigate("/customer");
+        }
+      } catch (error) {
+        console.error("Error fetching customer:", error);
+      } finally {
+        setFetchLoading(false);
+      }
+    };
+
+    fetchCustomer();
+  }, [id, getCustomerById, navigate]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -45,9 +70,6 @@ export default function CreateCustomer() {
     if (!formData.email.trim()) newErrors.email = "Email is required";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
       newErrors.email = "Invalid email format";
-    if (!formData.password) newErrors.password = "Password is required";
-    if (formData.password.length < 6)
-      newErrors.password = "Password must be at least 6 characters";
     if (!formData.phone.trim()) newErrors.phone = "Phone is required";
     if (!formData.address.trim()) newErrors.address = "Address is required";
 
@@ -58,19 +80,30 @@ export default function CreateCustomer() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) return;
+    if (!validateForm() || !id) return;
 
     setLoading(true);
 
     try {
-      await createCustomer(formData);
-      navigate("/customer");
+      await updateCustomer(id, formData);
+      navigate(`/customer/${id}`);
     } catch (error) {
-      console.error("Error creating customer:", error);
+      console.error("Error updating customer:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  if (fetchLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <CircularProgress />
+          <p className="mt-4 text-gray-600">Loading customer data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Box sx={{ maxWidth: 1200, mx: "auto", p: { xs: 2, md: 3 } }}>
@@ -79,19 +112,19 @@ export default function CreateCustomer() {
         <Button
           variant="outlined"
           startIcon={<ArrowLeft size={20} />}
-          onClick={() => navigate("/customer")}
+          onClick={() => navigate(`/customer/${id}`)}
           sx={{
             textTransform: "none",
             mb: 2,
             borderRadius: 2,
           }}
         >
-          Back to Customers
+          Back to Details
         </Button>
 
         <Box>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Add New Customer</h1>
-          <p className="text-gray-600">Create a new customer account</p>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Edit Customer</h1>
+          <p className="text-gray-600">Update customer information</p>
         </Box>
       </Box>
 
@@ -108,7 +141,7 @@ export default function CreateCustomer() {
           {/* Customer Information Section */}
           <Box sx={{ mb: 5 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
-              <UserPlus className="text-indigo-600" size={24} />
+              <UserCog className="text-indigo-600" size={24} />
               <h2 className="text-xl font-semibold text-gray-800">Customer Information</h2>
             </Box>
             <Divider sx={{ mb: 4 }} />
@@ -124,7 +157,6 @@ export default function CreateCustomer() {
                   error={!!errors.name}
                   helperText={errors.name}
                   required
-                  placeholder="John Doe"
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                 />
               </Grid>
@@ -140,23 +172,7 @@ export default function CreateCustomer() {
                   error={!!errors.email}
                   helperText={errors.email}
                   required
-                  placeholder="john@example.com"
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-                />
-              </Grid>
-
-              <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  fullWidth
-                  label="Password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  error={!!errors.password}
-                  helperText={errors.password || "Minimum 6 characters"}
-                  required
-                  placeholder="••••••••"
+                  disabled
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                 />
               </Grid>
@@ -171,24 +187,21 @@ export default function CreateCustomer() {
                   error={!!errors.phone}
                   helperText={errors.phone}
                   required
-                  placeholder="+1 (555) 000-0000"
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                 />
               </Grid>
 
-              <Grid size={{ xs: 12 , md: 12 }}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
-                  
                   rows={3}
                   label="Address"
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
                   error={!!errors.address}
-                  helperText={errors.address || "Full address including city and postal code"}
+                  helperText={errors.address}
                   required
-                  placeholder="123 Main St, City, State, ZIP"
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                 />
               </Grid>
@@ -196,10 +209,9 @@ export default function CreateCustomer() {
           </Box>
 
           {/* Info Box */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-blue-800">
-              <strong>Note:</strong> The customer will be created with "active" status and can
-              immediately log in with the provided credentials.
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-amber-800">
+              <strong>Note:</strong> Email address cannot be changed for security reasons. Contact support if email needs to be updated.
             </p>
           </div>
 
@@ -207,7 +219,7 @@ export default function CreateCustomer() {
           <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end", pt: 2 }}>
             <Button
               variant="outlined"
-              onClick={() => navigate("/customer")}
+              onClick={() => navigate(`/customer/${id}`)}
               disabled={loading}
               sx={{
                 textTransform: "none",
@@ -232,7 +244,7 @@ export default function CreateCustomer() {
                 "&:hover": { bgcolor: "#4338CA" },
               }}
             >
-              {loading ? "Creating..." : "Create Customer"}
+              {loading ? "Updating..." : "Update Customer"}
             </Button>
           </Box>
         </form>

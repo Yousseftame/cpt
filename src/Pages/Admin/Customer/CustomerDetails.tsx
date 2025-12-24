@@ -1,330 +1,364 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { arrayRemove, collection, doc, getDoc, getDocs,  updateDoc } from "firebase/firestore";
-import { Card, CardContent, Typography, TextField, Button } from "@mui/material";
-import { db } from "../../../service/firebase";
-import { arrayUnion } from "firebase/firestore";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Paper,
+  Button,
+  Chip,
+  CircularProgress,
+  Box,
+  Divider,
+  Avatar,
+  Tab,
+  Tabs,
+} from "@mui/material";
+import {
+  ArrowLeft,
+  Edit,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Package,
+  User,
+  Ticket as TicketIcon,
+} from "lucide-react";
+import CustomerTicketsTab from "./CustomerTicketsTab";
+import { useCustomer } from "../../../store/MasterContext/CustomerContext";
+import CustomerUnitsTab from "./CustomerUnitsTab";
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`customer-tabpanel-${index}`}
+      aria-labelledby={`customer-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
+export default function CustomerDetails() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { getCustomerById } = useCustomer();
+  const [customer, setCustomer] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [tabValue, setTabValue] = useState(0);
 
 
-const CustomerDetails = () => {
-    const { id } = useParams();
-    const [customer, setCustomer] = useState<any>(null);
-    const [assignOpen, setAssignOpen] = useState(false);
-    const [models, setModels] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [selectedModel, setSelectedModel] = useState("");
-    const [modelsMap, setModelsMap] = useState<any>({});
-    const [editOpen, setEditOpen] = useState(false);
-const [editSerial, setEditSerial] = useState("");
-const [editIndex, setEditIndex] = useState<number | null>(null);
-const [editModel, setEditModel] = useState("");
-
-
-
-    const [serial, setSerial] = useState("");
-
-    const navigate = useNavigate();
-
-
-    const openEditModal = (unit: any, index: number) => {
-  setEditSerial(unit.serial);
-  setEditModel(unit.modelId); // NEW
-  setEditIndex(index);
-  setEditOpen(true);
-};
-
-//  fetch generatrors
-    const fetchGenerators = async () => {
-        const snapshot = await getDocs(collection(db, "generatorModels"));
-
-        const map: any = {};
-        const list: any[] = [];
-
-        snapshot.docs.forEach(docSnap => {
-            const data = docSnap.data();
-            map[docSnap.id] = data;
-            list.push({ id: docSnap.id, ...data });
-        });
-
-        setModelsMap(map); // used for showing model name later
-        setModels(list);   // used for dropdown
-    };
-
-
-
-
-// fetch customer
-
+  
+  useEffect(() => {
     const fetchCustomer = async () => {
-        if (!id) return;
+      if (!id) return;
 
-        const docRef = doc(db, "customers", id);
-        const snapshot = await getDoc(docRef);
-
-        if (snapshot.exists()) {
-            setCustomer({ id: snapshot.id, ...snapshot.data() });
+      try {
+        const data = await getCustomerById(id);
+        if (data) {
+          setCustomer(data);
+        } else {
+          navigate("/customer");
         }
-
+      } catch (error) {
+        console.error("Error fetching customer:", error);
+      } finally {
         setLoading(false);
+      }
     };
 
+    fetchCustomer();
+  }, [id, getCustomerById, navigate]);
 
-    //  edit units ( generator - serial )
-   const handleSaveEdit = async () => {
-  if (editIndex === null) return;
-
-  const updatedUnits = [...customer.purchasedUnits];
-
-  updatedUnits[editIndex] = {
-    ...updatedUnits[editIndex],
-    serial: editSerial,
-    modelId: editModel,
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
   };
 
-  const docRef = doc(db, "customers", id!);
-  await updateDoc(docRef, { purchasedUnits: updatedUnits });
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return "N/A";
+    try {
+      return new Date(timestamp.toDate()).toLocaleString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch {
+      return "N/A";
+    }
+  };
 
-  setEditOpen(false);
-  fetchCustomer();
-};
-
-
-
-
-
-// remove unit
-
-    const handleRemoveUnit = async (unit: any) => {
-        const docRef = doc(db, "customers", id!);
-
-        await updateDoc(docRef, {
-            purchasedUnits: arrayRemove(unit)
-        });
-
-        fetchCustomer();
-    };
-
-//  fetch assign unit 
-
-    const handleAssign = async () => {
-        if (!selectedModel) {
-            alert("Select a model!");
-            return;
-        }
-
-        const docRef = doc(db, "customers", id!);
-
-        await updateDoc(docRef, {
-            purchasedUnits: arrayUnion({
-                modelId: selectedModel,
-                serial: serial || null,
-                assignedAt: new Date().toISOString(),
-            }),
-        });
-
-        alert("Unit assigned!");
-
-        setAssignOpen(false);
-        fetchCustomer(); // refresh data
-    };
-
-
-
-
-
-    useEffect(() => {
-        fetchCustomer();
-        fetchGenerators();
-    }, [id]);
-
-    if (loading) return <p className="text-center mt-10">Loading...</p>;
-
-    if (!customer) return <p className="text-center mt-10">Customer not found</p>;
-
+  if (loading) {
     return (
-        <div className="flex justify-center mt-10">
-            {/* list  generators models  */}
-            {customer.purchasedUnits?.length > 0 && (
-                <div className="mt-6">
-                    <h3 className="font-semibold mb-2">Purchased Units</h3>
-
-                    {customer.purchasedUnits.map((unit: any, index: number) => (
-                        <div key={index} className="border p-3 rounded mb-2">
-                            <p><strong>Model:</strong> {modelsMap[unit.modelId]?.name || "Unknown"}</p>
-                            <p><strong>Serial:</strong> {unit.serial}</p>
-                            <p><strong>Assigned:</strong> {unit.assignedAt}</p>
-
-
-                            {/* modelsMap[unit.modelId]?.name translate from id to name  */}
-
-                            <Button
-                                variant="contained"
-
-                                className="   underline text-sm"
-                                onClick={() => handleRemoveUnit(unit)}
-                            >
-                                Remove
-                            </Button>
-
-                            <Button
-  className="text-blue-600 underline text-sm ml-3"
-  onClick={() => openEditModal(unit, index)}
->
-  Edit
-</Button>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* edit from  */}
-  {editOpen && (
-  <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-    <div className="bg-white p-5 rounded shadow-lg w-100">
-
-      <h3 className="text-lg font-semibold mb-3">Edit Unit</h3>
-
-      <label className="block text-sm font-medium mb-1">Generator Model</label>
-      <select
-        className="border rounded p-2 w-full"
-        value={editModel}
-        onChange={(e) => setEditModel(e.target.value)}
-      >
-        {models.map((m) => (
-          <option key={m.id} value={m.id}>
-            {m.name}
-          </option>
-        ))}
-      </select>
-
-      <TextField
-        label="Serial Number"
-        className="mt-3"
-        fullWidth
-        value={editSerial}
-        onChange={(e) => setEditSerial(e.target.value)}
-      />
-
-      <div className="flex justify-end gap-3 mt-5">
-        <Button onClick={() => setEditOpen(false)}>Cancel</Button>
-        <Button onClick={handleSaveEdit} variant="contained">Save</Button>
-      </div>
-
-    </div>
-  </div>
-)}
-
-
-
-
-
-            <Card className="w-150 shadow-xl">
-                <CardContent>
-                    <Typography variant="h5" gutterBottom>
-                        Customer Details
-                    </Typography>
-
-                    <div className="mt-6 space-y-4">
-
-                        <TextField
-                            label="Name"
-                            fullWidth
-                            value={customer.name}
-                            onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
-                        />
-
-                        <TextField
-                            label="Phone"
-                            fullWidth
-                            value={customer.phone}
-                            onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
-                        />
-
-                        <TextField
-                            label="Address"
-                            fullWidth
-                            value={customer.address}
-                            onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
-                        />
-
-                        <Button
-                            variant="contained"
-                            onClick={async () => {
-                                const docRef = doc(db, "customers", id!);
-                                await updateDoc(docRef, {
-                                    name: customer.name,
-                                    phone: customer.phone,
-                                    address: customer.address,
-                                });
-
-                                alert("Customer updated!");
-                            }}
-                        >
-                            Save Changes
-                        </Button>
-
-                        <Typography variant="body1" className="mt-4">
-                            Purchased Units: {customer.purchasedUnits?.length || 0}
-                        </Typography>
-
-                        <Button
-                            variant="outlined"
-                            onClick={() => setAssignOpen(true)}
-                        >
-                            Assign Unit
-                        </Button>
-                        <Button
-  variant="outlined"
-  onClick={() => navigate(`/customer/${id}/tickets`)}
->
-  View Tickets
-</Button>
-
-
-                    </div>
-                </CardContent>
-            </Card>
-            {/* add units form */}
-            {assignOpen && (
-                <div className="fixed inset-0 flex justify-center items-center bg-black/50">
-                    <div className="bg-white p-6 rounded shadow-lg w-100">
-
-                        <Typography variant="h6">Assign Unit</Typography>
-
-                        <select
-                            className="border p-2 rounded w-full mt-3"
-                            onChange={(e) => setSelectedModel(e.target.value)}
-                        >
-                            <option value="">Select Generator</option>
-                            {models.map((m) => (
-                                <option key={m.id} value={m.id}>
-                                    {m.name}
-                                </option>
-                            ))}
-                        </select>
-
-                        <TextField
-                            className="mt-3 w-full"
-                            label="Serial Number"
-                            onChange={(e) => setSerial(e.target.value)}
-                        />
-
-                        <div className="flex justify-end gap-3 mt-5">
-                            <Button variant="text" onClick={() => setAssignOpen(false)}>
-                                Cancel
-                            </Button>
-                            <Button variant="contained" onClick={handleAssign}>
-                                Assign
-                            </Button>
-                            
-                        </div>
-                    </div>
-                </div>
-            )}
-
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <CircularProgress />
+          <p className="mt-4 text-gray-600">Loading customer details...</p>
         </div>
-
+      </div>
     );
-};
+  }
 
-export default CustomerDetails;
+  if (!customer) {
+    return null;
+  }
+
+  return (
+    <Box sx={{ maxWidth: 1400, mx: "auto", p: { xs: 2, md: 3 } }}>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowLeft size={20} />}
+          onClick={() => navigate("/customer")}
+          sx={{
+            textTransform: "none",
+            mb: 2,
+            borderRadius: 2,
+          }}
+        >
+          Back to Customers
+        </Button>
+
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", sm: "center" },
+            flexDirection: { xs: "column", sm: "row" },
+            gap: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Avatar
+              sx={{
+                bgcolor: "#4F46E5",
+                width: 64,
+                height: 64,
+                fontSize: "1.5rem",
+              }}
+            >
+              {customer.name.charAt(0).toUpperCase()}
+            </Avatar>
+            <Box>
+              <h1 className="text-3xl font-bold text-gray-800">{customer.name}</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <Chip
+                  label={customer.status}
+                  size="small"
+                  sx={{
+                    bgcolor:
+                      customer.status === "active"
+                        ? "#F6FFED"
+                        : customer.status === "inactive"
+                        ? "#FFF1F0"
+                        : "#FEF3C7",
+                    color:
+                      customer.status === "active"
+                        ? "#6CC464"
+                        : customer.status === "inactive"
+                        ? "#FF5F5E"
+                        : "#F59E0B",
+                    fontWeight: 600,
+                  }}
+                />
+                <Chip label={customer.role} size="small" />
+              </div>
+            </Box>
+          </Box>
+
+          <Button
+            variant="contained"
+            startIcon={<Edit size={20} />}
+            onClick={() => navigate(`/customer/${id}/edit`)}
+            sx={{
+              textTransform: "none",
+              px: 4,
+              py: 1.5,
+              bgcolor: "#4F46E5",
+              borderRadius: 2,
+              "&:hover": { bgcolor: "#4338CA" },
+            }}
+          >
+            Edit Customer
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Quick Stats */}
+      <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }, mb: 4 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            border: "1px solid",
+            borderColor: "grey.200",
+            borderRadius: 3,
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            color: "white",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Package size={32} />
+            <Box>
+              <p className="text-sm opacity-90">Purchased Units</p>
+              <p className="text-3xl font-bold">{customer.purchasedUnits?.length || 0}</p>
+            </Box>
+          </Box>
+        </Paper>
+
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            border: "1px solid",
+            borderColor: "grey.200",
+            borderRadius: 3,
+            background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+            color: "white",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <TicketIcon size={32} />
+            <Box>
+              <p className="text-sm opacity-90">Total Tickets</p>
+              <p className="text-3xl font-bold">{customer.ticketsCount || 0}</p>
+            </Box>
+          </Box>
+        </Paper>
+
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            border: "1px solid",
+            borderColor: "grey.200",
+            borderRadius: 3,
+            background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+            color: "white",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <User size={32} />
+            <Box>
+              <p className="text-sm opacity-90">Customer Since</p>
+              <p className="text-lg font-bold">{formatDate(customer.createdAt)}</p>
+            </Box>
+          </Box>
+        </Paper>
+
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            border: "1px solid",
+            borderColor: "grey.200",
+            borderRadius: 3,
+            background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+            color: "white",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Calendar size={32} />
+            <Box>
+              <p className="text-sm opacity-90">Account Status</p>
+              <p className="text-lg font-bold capitalize">{customer.status}</p>
+            </Box>
+          </Box>
+        </Paper>
+      </Box>
+
+      {/* Main Content Grid */}
+      <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", lg: "1fr 2fr" } }}>
+        {/* Left Column - Contact Info */}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 4,
+            border: "1px solid",
+            borderColor: "grey.200",
+            borderRadius: 3,
+            height: "fit-content",
+          }}
+        >
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Contact Information</h2>
+          <Divider sx={{ mb: 3 }} />
+
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <Mail size={16} className="text-gray-500" />
+                <span className="text-sm text-gray-500">Email</span>
+              </Box>
+              <p className="text-gray-900 font-medium">{customer.email}</p>
+            </Box>
+
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <Phone size={16} className="text-gray-500" />
+                <span className="text-sm text-gray-500">Phone</span>
+              </Box>
+              <p className="text-gray-900 font-medium">{customer.phone}</p>
+            </Box>
+
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <MapPin size={16} className="text-gray-500" />
+                <span className="text-sm text-gray-500">Address</span>
+              </Box>
+              <p className="text-gray-900 font-medium">{customer.address}</p>
+            </Box>
+
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <Calendar size={16} className="text-gray-500" />
+                <span className="text-sm text-gray-500">Created At</span>
+              </Box>
+              <p className="text-gray-900 font-medium">{formatDate(customer.createdAt)}</p>
+            </Box>
+          </Box>
+        </Paper>
+
+        {/* Right Column - Tabs */}
+        <Paper
+          elevation={0}
+          sx={{
+            border: "1px solid",
+            borderColor: "grey.200",
+            borderRadius: 3,
+          }}
+        >
+          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+            <Tabs value={tabValue} onChange={handleTabChange} sx={{ px: 2 }}>
+              <Tab
+                label={`Units (${customer.purchasedUnits?.length || 0})`}
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              />
+              <Tab
+                label={`Tickets (${customer.ticketsCount || 0})`}
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              />
+            </Tabs>
+          </Box>
+
+          <Box sx={{ px: 4 }}>
+            <TabPanel value={tabValue} index={0}>
+              <CustomerUnitsTab customerId={id!} units={customer.purchasedUnits || []} />
+            </TabPanel>
+            <TabPanel value={tabValue} index={1}>
+              <CustomerTicketsTab customerId={id!} />
+            </TabPanel>
+          </Box>
+        </Paper>
+      </Box>
+    </Box>
+  );
+}

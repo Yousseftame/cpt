@@ -24,6 +24,7 @@ import CustomerDetails from "./Pages/Admin/Customer/CustomerDetails";
 import CustomerTickets from "./Pages/Admin/Customer/CustomerTickets";
 import PurchaseRequests from "./Pages/Admin/Request/PurchaseRequests";
 import RequestDetails from "./Pages/Admin/Request/RequestDetails";
+import EditCustomer from "./Pages/Admin/Customer/EditCustomer";
 
 function App() {
   const routes = createBrowserRouter([
@@ -64,10 +65,11 @@ function App() {
         },
 
         // Customer routes
-        { path: "customers", element: <CreateCustomer /> },
+           { path: "customers", element: <CreateCustomer /> },
         { path: "customer", element: <CustomersList /> },
         { path: "customer/:id", element: <CustomerDetails /> },
-        { path: "/customer/:id/tickets", element: <CustomerTickets /> },
+        { path: "customer/:id/edit", element: <EditCustomer /> },
+        { path: "customer/:id/tickets", element: <CustomerTickets /> },
 
         // Model/Generator routes
        
