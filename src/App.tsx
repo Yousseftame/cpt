@@ -8,7 +8,6 @@ import Dashboard from "./Pages/Dashbaord/Dashboard";
 import { Toaster } from "react-hot-toast";
 import ResetPassword from "./Pages/Auth/ResetPassword/ResetPassword";
 import Request from "./Pages/Admin/Request/Request";
-import Ticket from "./Pages/Admin/Ticket/Ticket";
 import AdminRole from "./Pages/Admin/AdminRole/AdminRole";
 import Register from "./Pages/Auth/Register/Register";
 import VerifyAccount from "./Pages/Auth/VerifyAccount/VerifyAccount";
@@ -25,6 +24,8 @@ import CustomerTickets from "./Pages/Admin/Customer/CustomerTickets";
 import PurchaseRequests from "./Pages/Admin/Request/PurchaseRequests";
 import RequestDetails from "./Pages/Admin/Request/RequestDetails";
 import EditCustomer from "./Pages/Admin/Customer/EditCustomer";
+import TicketDetails from "./Pages/Admin/Ticket/TicketDetails";
+import TicketList from "./Pages/Admin/Ticket/TicketList";
 
 function App() {
   const routes = createBrowserRouter([
@@ -84,7 +85,10 @@ function App() {
         { path: "/requests/:id", element: <RequestDetails /> },
 
         // Ticket route
-        { path: "ticket", element: <Ticket /> },
+        { path: "ticket", element: <TicketList /> },
+        { path: "ticket/:id", element: <TicketDetails /> },
+         
+        
 
         // Admin Role (Super Admin only)
         {
