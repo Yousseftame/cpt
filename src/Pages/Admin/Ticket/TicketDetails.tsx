@@ -371,7 +371,8 @@ export default function TicketDetails() {
 
             <Box sx={{ p: 3, maxHeight: "500px", overflowY: "auto" }}>
               <div className="space-y-4">
-                {ticket.messages.map((msg: any, index: number) => (
+                {(ticket.messages || []).map((msg: any, index: number) => (
+
                   <div
                     key={index}
                     className={`flex gap-3 ${msg.senderType === "admin" ? "flex-row-reverse" : ""}`}
@@ -485,11 +486,11 @@ export default function TicketDetails() {
             </Box>
 
             <Box sx={{ p: 3 }}>
-              {ticket.internalNotes.length === 0 ? (
+              {(ticket.internalNotes || []).length === 0 ? (
                 <p className="text-gray-500 text-center py-8">No internal notes yet</p>
               ) : (
                 <div className="space-y-3">
-                  {ticket.internalNotes.map((note: any, index: number) => (
+                  {(ticket.internalNotes || []).map((note: any, index: number) => (
                     <div key={index} className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-2">

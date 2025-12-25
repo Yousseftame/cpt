@@ -193,7 +193,7 @@ export default function TicketList() {
           gap: 3,
           gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(3, 1fr)", xl: "repeat(6, 1fr)" },
           mb: 4,
-        }}
+        }}  
       >
         <Paper
           elevation={0}
