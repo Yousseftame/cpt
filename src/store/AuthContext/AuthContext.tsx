@@ -60,6 +60,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const logout = async () => {
         await signOut(auth);
         setUser(null); // cleanup local state
+       
+localStorage.removeItem('userRole');
+localStorage.removeItem('userName');
     };
 
     return (

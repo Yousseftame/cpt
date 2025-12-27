@@ -28,19 +28,29 @@ import {
   ChevronDown,
   MessageSquare,
   FileText,
+  RefreshCw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTicket } from "../../../store/MasterContext/TicketContext";
+import { useAuth } from "../../../store/AuthContext/AuthContext";
 import PagesLoader from "../../../components/shared/PagesLoader";
 
 export default function TicketList() {
   const { tickets, loading, fetchTickets, updateTicketStatus } = useTicket();
+  const { user } = useAuth();
   const [filteredTickets, setFilteredTickets] = useState(tickets);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [assignmentFilter, setAssignmentFilter] = useState("all");
+  const [userRole, setUserRole] = useState<string>("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Get user role from localStorage or context
+    const role = localStorage.getItem("userRole") || "";
+    setUserRole(role);
+  }, []);
 
   useEffect(() => {
     fetchTickets();
@@ -48,6 +58,11 @@ export default function TicketList() {
 
   useEffect(() => {
     let filtered = tickets;
+
+    // If user is admin (not superAdmin), show only assigned tickets
+    if (userRole === "admin" && user?.uid) {
+      filtered = filtered.filter((ticket) => ticket.assignedAdminId === user.uid);
+    }
 
     if (searchTerm) {
       filtered = filtered.filter(
@@ -73,7 +88,7 @@ export default function TicketList() {
     }
 
     setFilteredTickets(filtered);
-  }, [searchTerm, statusFilter, priorityFilter, assignmentFilter, tickets]);
+  }, [searchTerm, statusFilter, priorityFilter, assignmentFilter, tickets, userRole, user?.uid]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -86,7 +101,7 @@ export default function TicketList() {
       case "closed":
         return <CheckCircle2 size={16} />;
       case "reopened":
-        return <AlertTriangle size={16} />;
+        return <RefreshCw size={16} />;
       default:
         return <AlertCircle size={16} />;
     }
@@ -111,10 +126,8 @@ export default function TicketList() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "urgent":
-        return { bgcolor: "#FFF1F0", color: "#DC2626", icon: <AlertTriangle size={14} /> };
       case "high":
-        return { bgcolor: "#FFF1F0", color: "#FF5F5E", icon: <AlertTriangle size={14} /> };
+        return { bgcolor: "#FFF1F0", color: "#DC2626", icon: <AlertTriangle size={14} /> };
       case "medium":
         return { bgcolor: "#FEF3C7", color: "#F59E0B", icon: <AlertCircle size={14} /> };
       case "low":
@@ -125,13 +138,21 @@ export default function TicketList() {
   };
 
   const getStats = () => {
+    let statsTickets = tickets;
+    
+    // If admin, only count their assigned tickets
+    if (userRole === "admin" && user?.uid) {
+      statsTickets = tickets.filter((t) => t.assignedAdminId === user.uid);
+    }
+
     return {
-      total: tickets.length,
-      open: tickets.filter((t) => t.status === "open").length,
-      in_progress: tickets.filter((t) => t.status === "in_progress").length,
-      resolved: tickets.filter((t) => t.status === "resolved").length,
-      closed: tickets.filter((t) => t.status === "closed").length,
-      unassigned: tickets.filter((t) => !t.assignedAdminId).length,
+      total: statsTickets.length,
+      open: statsTickets.filter((t) => t.status === "open").length,
+      in_progress: statsTickets.filter((t) => t.status === "in_progress").length,
+      resolved: statsTickets.filter((t) => t.status === "resolved").length,
+      closed: statsTickets.filter((t) => t.status === "closed").length,
+      reopened: statsTickets.filter((t) => t.status === "reopened").length,
+      unassigned: tickets.filter((t) => !t.assignedAdminId).length, // Always show total unassigned
     };
   };
 
@@ -181,139 +202,180 @@ export default function TicketList() {
               <MessageSquare size={32} />
               Support Tickets
             </h1>
-            <p className="text-gray-600 mt-1">Manage customer support requests and issues</p>
+            <p className="text-gray-600 mt-1">
+              {userRole === "admin" 
+                ? "Manage your assigned support tickets" 
+                : "Manage customer support requests and issues"}
+            </p>
           </div>
         </div>
       </Box>
 
       {/* Stats Cards */}
-      <Box
-        sx={{
-          display: "grid",
-          gap: 3,
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(3, 1fr)", xl: "repeat(6, 1fr)" },
-          mb: 4,
-        }}  
-      >
-        <Paper
-          elevation={0}
+      <Box sx={{ mb: 4 }}>
+        {/* First Row - Total and Unassigned */}
+        <Box
           sx={{
-            p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 3,
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white",
+            display: "grid",
+            gap: 3,
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
+            mb: 3,
           }}
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm opacity-90">Total Tickets</p>
-              <p className="text-3xl font-bold mt-1">{stats.total}</p>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              border: "1px solid",
+              borderColor: "grey.200",
+              borderRadius: 3,
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              color: "white",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Total Tickets</p>
+                <p className="text-3xl font-bold mt-1">{stats.total}</p>
+              </div>
+              <MessageSquare size={40} className="opacity-75" />
             </div>
-            <MessageSquare size={40} className="opacity-75" />
-          </div>
-        </Paper>
+          </Paper>
 
-        <Paper
-          elevation={0}
-          sx={{
-            p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 3,
-            background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-            color: "white",
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm opacity-90">Open</p>
-              <p className="text-3xl font-bold mt-1">{stats.open}</p>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              border: "1px solid",
+              borderColor: "grey.200",
+              borderRadius: 3,
+              background: "linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)",
+              color: "white",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Unassigned</p>
+                <p className="text-3xl font-bold mt-1">{stats.unassigned}</p>
+              </div>
+              <User size={40} className="opacity-75" />
             </div>
-            <AlertCircle size={40} className="opacity-75" />
-          </div>
-        </Paper>
+          </Paper>
+        </Box>
 
-        <Paper
-          elevation={0}
+        {/* Second Row - Status Cards */}
+        <Box
           sx={{
-            p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 3,
-            background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-            color: "white",
+            display: "grid",
+            gap: 3,
+            gridTemplateColumns: { 
+              xs: "1fr", 
+              sm: "repeat(2, 1fr)", 
+              md: "repeat(3, 1fr)", 
+              lg: "repeat(5, 1fr)" 
+            },
           }}
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm opacity-90">In Progress</p>
-              <p className="text-3xl font-bold mt-1">{stats.in_progress}</p>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              border: "1px solid",
+              borderColor: "grey.200",
+              borderRadius: 3,
+              background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+              color: "white",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Open</p>
+                <p className="text-3xl font-bold mt-1">{stats.open}</p>
+              </div>
+              <AlertCircle size={40} className="opacity-75" />
             </div>
-            <TrendingUp size={40} className="opacity-75" />
-          </div>
-        </Paper>
+          </Paper>
 
-        <Paper
-          elevation={0}
-          sx={{
-            p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 3,
-            background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-            color: "white",
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm opacity-90">Resolved</p>
-              <p className="text-3xl font-bold mt-1">{stats.resolved}</p>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              border: "1px solid",
+              borderColor: "grey.200",
+              borderRadius: 3,
+              background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+              color: "white",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">In Progress</p>
+                <p className="text-3xl font-bold mt-1">{stats.in_progress}</p>
+              </div>
+              <TrendingUp size={40} className="opacity-75" />
             </div>
-            <CheckCircle2 size={40} className="opacity-75" />
-          </div>
-        </Paper>
+          </Paper>
 
-        <Paper
-          elevation={0}
-          sx={{
-            p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 3,
-            background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-            color: "white",
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm opacity-90">Closed</p>
-              <p className="text-3xl font-bold mt-1">{stats.closed}</p>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              border: "1px solid",
+              borderColor: "grey.200",
+              borderRadius: 3,
+              background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+              color: "white",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Resolved</p>
+                <p className="text-3xl font-bold mt-1">{stats.resolved}</p>
+              </div>
+              <CheckCircle2 size={40} className="opacity-75" />
             </div>
-            <CheckCircle2 size={40} className="opacity-75" />
-          </div>
-        </Paper>
+          </Paper>
 
-        <Paper
-          elevation={0}
-          sx={{
-            p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 3,
-            background: "linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)",
-            color: "white",
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm opacity-90">Unassigned</p>
-              <p className="text-3xl font-bold mt-1">{stats.unassigned}</p>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              border: "1px solid",
+              borderColor: "grey.200",
+              borderRadius: 3,
+              background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+              color: "white",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Closed</p>
+                <p className="text-3xl font-bold mt-1">{stats.closed}</p>
+              </div>
+              <CheckCircle2 size={40} className="opacity-75" />
             </div>
-            <User size={40} className="opacity-75" />
-          </div>
-        </Paper>
+          </Paper>
+
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              border: "1px solid",
+              borderColor: "grey.200",
+              borderRadius: 3,
+              background: "linear-gradient(135deg, #FF8C00 0%, #FF6347 100%)",
+              color: "white",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Reopened</p>
+                <p className="text-3xl font-bold mt-1">{stats.reopened}</p>
+              </div>
+              <RefreshCw size={40} className="opacity-75" />
+            </div>
+          </Paper>
+        </Box>
       </Box>
 
       {/* Filters Section */}
@@ -372,21 +434,22 @@ export default function TicketList() {
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="all">All Priority</option>
-              <option value="urgent">Urgent</option>
               <option value="high">High</option>
               <option value="medium">Medium</option>
               <option value="low">Low</option>
             </select>
 
-            <select
-              value={assignmentFilter}
-              onChange={(e) => setAssignmentFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="all">All Tickets</option>
-              <option value="assigned">Assigned</option>
-              <option value="unassigned">Unassigned</option>
-            </select>
+            {userRole === "superAdmin" && (
+              <select
+                value={assignmentFilter}
+                onChange={(e) => setAssignmentFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="all">All Tickets</option>
+                <option value="assigned">Assigned</option>
+                <option value="unassigned">Unassigned</option>
+              </select>
+            )}
           </div>
         </div>
 
@@ -427,6 +490,8 @@ export default function TicketList() {
           <p className="text-gray-500">
             {searchTerm || statusFilter !== "all" || priorityFilter !== "all" || assignmentFilter !== "all"
               ? "Try adjusting your filters"
+              : userRole === "admin"
+              ? "No tickets have been assigned to you yet"
               : "No support tickets have been created yet"}
           </p>
         </Paper>

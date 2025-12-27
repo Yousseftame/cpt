@@ -13,6 +13,7 @@ import {
   arrayUnion,
   arrayRemove,
   orderBy,
+  Timestamp,
 } from 'firebase/firestore';
 import { db, auth } from '../../service/firebase';
 import toast from 'react-hot-toast';
@@ -37,7 +38,7 @@ export interface Ticket {
   id: string;
   subject: string;
   status: 'open' | 'in_progress' | 'resolved' | 'closed' | 'reopened';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  priority: 'low' | 'medium' | 'high';
   customerId: string;
   customerName?: string;
   customerEmail?: string;
@@ -58,6 +59,7 @@ interface TicketContextType {
   fetchTickets: () => Promise<void>;
   getTicketById: (id: string) => Promise<Ticket | null>;
   updateTicketStatus: (id: string, status: Ticket['status']) => Promise<void>;
+  updateTicketPriority: (id: string, priority: Ticket['priority']) => Promise<void>;
   assignTicket: (id: string, adminId: string, adminName: string) => Promise<void>;
   addMessage: (ticketId: string, message: Omit<TicketMessage, 'createdAt'>) => Promise<void>;
   addInternalNote: (ticketId: string, note: Omit<InternalNote, 'createdAt'>) => Promise<void>;
@@ -206,6 +208,25 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
     [fetchTickets]
   );
 
+  const updateTicketPriority = useCallback(
+    async (id: string, priority: Ticket['priority']) => {
+      try {
+        const docRef = doc(db, 'tickets', id);
+        await updateDoc(docRef, {
+          priority,
+          updatedAt: serverTimestamp(),
+        });
+        toast.success('Ticket priority updated successfully!');
+        await fetchTickets();
+      } catch (error) {
+        console.error('Error updating ticket priority:', error);
+        toast.error('Failed to update ticket priority');
+        throw error;
+      }
+    },
+    [fetchTickets]
+  );
+
   const assignTicket = useCallback(
     async (id: string, adminId: string, adminName: string) => {
       try {
@@ -254,13 +275,28 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
     async (ticketId: string, note: Omit<InternalNote, 'createdAt'>) => {
       try {
         const docRef = doc(db, 'tickets', ticketId);
+        
+        // Get current ticket data
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+          throw new Error('Ticket not found');
+        }
+        
+        const currentData = docSnap.data();
+        const currentNotes = currentData.internalNotes || [];
+        
+        // Create new note with timestamp
+        const newNoteWithTimestamp = {
+          ...note,
+          createdAt: Timestamp.now(),
+        };
+        
+        // Update with new array
         await updateDoc(docRef, {
-          internalNotes: arrayUnion({
-            ...note,
-            createdAt: serverTimestamp(),
-          }),
+          internalNotes: [...currentNotes, newNoteWithTimestamp],
           updatedAt: serverTimestamp(),
         });
+        
         toast.success('Internal note added successfully!');
         await fetchTickets();
       } catch (error) {
@@ -343,6 +379,7 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
     fetchTickets,
     getTicketById,
     updateTicketStatus,
+    updateTicketPriority,
     assignTicket,
     addMessage,
     addInternalNote,

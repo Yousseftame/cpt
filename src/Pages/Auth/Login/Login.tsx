@@ -37,6 +37,12 @@ const Login = () => {
       console.log('User logged in:', currentUser);
       console.log('Email verified:', currentUser?.emailVerified);
 
+      // On login
+// localStorage.setItem('userRole', 'admin'); // or 'admin'
+// localStorage.setItem('userName', currentUser?.name);
+
+
+
       // جلب الـ role من Firestore
       const docRef = doc(db, "admins", userCredential.user.uid);
       const docSnap = await getDoc(docRef);

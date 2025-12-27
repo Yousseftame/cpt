@@ -48,6 +48,7 @@ export default function TicketDetails() {
     removeInternalNote,
     assignTicket,
     updateTicketStatus,
+    updateTicketPriority,
     reopenTicket,
     closeTicket,
   } = useTicket();
@@ -59,10 +60,21 @@ export default function TicketDetails() {
   const [noteDialog, setNoteDialog] = useState(false);
   const [assignDialog, setAssignDialog] = useState(false);
   const [statusDialog, setStatusDialog] = useState(false);
+  const [priorityDialog, setPriorityDialog] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState("");
   const [newStatus, setNewStatus] = useState("");
+  const [newPriority, setNewPriority] = useState("");
   const [admins, setAdmins] = useState<any[]>([]);
   const [adminName, setAdminName] = useState("");
+  const [userRole, setUserRole] = useState<string>("");
+
+  useEffect(() => {
+    // Get user role and admin name from localStorage or context
+    const role = localStorage.getItem("userRole") || "";
+    const name = localStorage.getItem("userName") || user?.email || "Admin";
+    setUserRole(role);
+    setAdminName(name);
+  }, [user]);
 
   useEffect(() => {
     const fetchTicket = async () => {
@@ -75,6 +87,7 @@ export default function TicketDetails() {
           setTicket(ticketData);
           setSelectedAdmin(ticketData.assignedAdminId || "");
           setNewStatus(ticketData.status);
+          setNewPriority(ticketData.priority);
         } else {
           toast.error("Ticket not found");
           navigate("/ticket");
@@ -134,10 +147,8 @@ export default function TicketDetails() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "urgent":
-        return { bgcolor: "#FFF1F0", color: "#DC2626" };
       case "high":
-        return { bgcolor: "#FFF1F0", color: "#FF5F5E" };
+        return { bgcolor: "#FFF1F0", color: "#DC2626" };
       case "medium":
         return { bgcolor: "#FEF3C7", color: "#F59E0B" };
       case "low":
@@ -171,7 +182,7 @@ export default function TicketDetails() {
         message: newMessage,
         senderId: user.uid,
         senderType: "admin",
-        senderName: adminName || user.email || "Admin",
+        senderName: adminName,
         attachments: [],
       });
       setNewMessage("");
@@ -188,7 +199,7 @@ export default function TicketDetails() {
       await addInternalNote(id, {
         note: newNote,
         createdBy: user.uid,
-        createdByName: adminName || user.email || "Admin",
+        createdByName: adminName,
       });
       setNewNote("");
       setNoteDialog(false);
@@ -234,6 +245,18 @@ export default function TicketDetails() {
     }
   };
 
+  const handlePriorityChange = async () => {
+    if (!id) return;
+
+    try {
+      await updateTicketPriority(id, newPriority as any);
+      setPriorityDialog(false);
+      await refreshTicket();
+    } catch (error) {
+      console.error("Error changing priority:", error);
+    }
+  };
+
   const handleReopen = async () => {
     if (!id) return;
 
@@ -266,6 +289,7 @@ export default function TicketDetails() {
 
   const statusStyle = getStatusColor(ticket.status);
   const priorityStyle = getPriorityColor(ticket.priority);
+  const isSuperAdmin = userRole === "superAdmin";
 
   return (
     <Box sx={{ maxWidth: 1400, mx: "auto", p: { xs: 2, md: 3 } }}>
@@ -296,21 +320,24 @@ export default function TicketDetails() {
               <Chip
                 label={`${ticket.priority.toUpperCase()} Priority`}
                 size="small"
-                sx={{ ...priorityStyle, fontWeight: 600 }}
+                sx={{ ...priorityStyle, fontWeight: 600, cursor: "pointer" }}
+                onClick={() => setPriorityDialog(true)}
               />
               <span className="text-sm text-gray-500">#{ticket.id.slice(0, 8)}</span>
             </div>
           </Box>
 
           <div className="flex gap-2 flex-wrap">
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => setAssignDialog(true)}
-              sx={{ textTransform: "none" }}
-            >
-              {ticket.assignedAdminId ? "Reassign" : "Assign"}
-            </Button>
+            {isSuperAdmin && (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setAssignDialog(true)}
+                sx={{ textTransform: "none" }}
+              >
+                {ticket.assignedAdminId ? "Reassign" : "Assign"}
+              </Button>
+            )}
             <Button
               variant="outlined"
               size="small"
@@ -318,6 +345,14 @@ export default function TicketDetails() {
               sx={{ textTransform: "none" }}
             >
               Change Status
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setPriorityDialog(true)}
+              sx={{ textTransform: "none" }}
+            >
+              Change Priority
             </Button>
             {ticket.status === "closed" ? (
               <Button
@@ -372,7 +407,6 @@ export default function TicketDetails() {
             <Box sx={{ p: 3, maxHeight: "500px", overflowY: "auto" }}>
               <div className="space-y-4">
                 {(ticket.messages || []).map((msg: any, index: number) => (
-
                   <div
                     key={index}
                     className={`flex gap-3 ${msg.senderType === "admin" ? "flex-row-reverse" : ""}`}
@@ -645,42 +679,44 @@ export default function TicketDetails() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={assignDialog} onClose={() => setAssignDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Assign Ticket</DialogTitle>
-        <DialogContent>
-          <FormControl fullWidth sx={{ mt: 2 }}>
-            <InputLabel>Select Admin</InputLabel>
-            <Select
-              value={selectedAdmin}
-              onChange={(e) => setSelectedAdmin(e.target.value)}
-              label="Select Admin"
+      {isSuperAdmin && (
+        <Dialog open={assignDialog} onClose={() => setAssignDialog(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Assign Ticket</DialogTitle>
+          <DialogContent>
+            <FormControl fullWidth sx={{ mt: 2 }}>
+              <InputLabel>Select Admin</InputLabel>
+              <Select
+                value={selectedAdmin}
+                onChange={(e) => setSelectedAdmin(e.target.value)}
+                label="Select Admin"
+              >
+                {admins.map((admin) => (
+                  <MenuItem key={admin.id} value={admin.id}>
+                    {admin.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </DialogContent>
+          <DialogActions sx={{ p: 3 }}>
+            <Button onClick={() => setAssignDialog(false)} sx={{ textTransform: "none" }}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAssignTicket}
+              variant="contained"
+              disabled={!selectedAdmin}
+              sx={{
+                textTransform: "none",
+                bgcolor: "#4F46E5",
+                "&:hover": { bgcolor: "#4338CA" },
+              }}
             >
-              {admins.map((admin) => (
-                <MenuItem key={admin.id} value={admin.id}>
-                  {admin.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setAssignDialog(false)} sx={{ textTransform: "none" }}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleAssignTicket}
-            variant="contained"
-            disabled={!selectedAdmin}
-            sx={{
-              textTransform: "none",
-              bgcolor: "#4F46E5",
-              "&:hover": { bgcolor: "#4338CA" },
-            }}
-          >
-            Assign
-          </Button>
-        </DialogActions>
-      </Dialog>
+              Assign
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
 
       <Dialog open={statusDialog} onClose={() => setStatusDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Change Ticket Status</DialogTitle>
@@ -710,6 +746,36 @@ export default function TicketDetails() {
             }}
           >
             Update Status
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={priorityDialog} onClose={() => setPriorityDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Change Ticket Priority</DialogTitle>
+        <DialogContent>
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <InputLabel>Select Priority</InputLabel>
+            <Select value={newPriority} onChange={(e) => setNewPriority(e.target.value)} label="Select Priority">
+              <MenuItem value="low">Low</MenuItem>
+              <MenuItem value="medium">Medium</MenuItem>
+              <MenuItem value="high">High</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setPriorityDialog(false)} sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handlePriorityChange}
+            variant="contained"
+            sx={{
+              textTransform: "none",
+              bgcolor: "#4F46E5",
+              "&:hover": { bgcolor: "#4338CA" },
+            }}
+          >
+            Update Priority
           </Button>
         </DialogActions>
       </Dialog>
