@@ -35,6 +35,23 @@ import { useTicket } from "../../../store/MasterContext/TicketContext";
 import { useAuth } from "../../../store/AuthContext/AuthContext";
 import PagesLoader from "../../../components/shared/PagesLoader";
 
+// Purple & Blue Color Palette (from Berry dashboard)
+const colors = {
+  primary: "#5E35B1",      // Deep purple
+  primaryLight: "#7E57C2", // Light purple
+  secondary: "#1E88E5",    // Bright blue
+  secondaryLight: "#42A5F5", // Light blue
+  accent: "#FFB74D",       // Warm orange/yellow
+  success: "#66BB6A",      // Green
+  error: "#EF5350",        // Red
+  lightBg: "#F5F5F5",      // Light gray background
+  cardBg: "#FFFFFF",       // White
+  textPrimary: "#263238",  // Dark text
+  textSecondary: "#607D8B", // Gray text
+  border: "#E0E0E0",       // Light border
+  lavender: "#EDE7F6",     // Very light purple
+};
+
 export default function TicketList() {
   const { tickets, loading, fetchTickets, updateTicketStatus } = useTicket();
   const { user } = useAuth();
@@ -47,7 +64,6 @@ export default function TicketList() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get user role from localStorage or context
     const role = localStorage.getItem("userRole") || "";
     setUserRole(role);
   }, []);
@@ -59,7 +75,6 @@ export default function TicketList() {
   useEffect(() => {
     let filtered = tickets;
 
-    // If user is admin (not superAdmin), show only assigned tickets
     if (userRole === "admin" && user?.uid) {
       filtered = filtered.filter((ticket) => ticket.assignedAdminId === user.uid);
     }
@@ -110,37 +125,36 @@ export default function TicketList() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "open":
-        return { bgcolor: "#EEF2FF", color: "#4F46E5" };
+        return { bgcolor: colors.lavender, color: colors.primary };
       case "in_progress":
-        return { bgcolor: "#FEF3C7", color: "#F59E0B" };
+        return { bgcolor: "#E3F2FD", color: colors.secondary };
       case "resolved":
-        return { bgcolor: "#F6FFED", color: "#6CC464" };
+        return { bgcolor: "#E8F5E9", color: colors.success };
       case "closed":
-        return { bgcolor: "#F3F4F6", color: "#6B7280" };
+        return { bgcolor: "#ECEFF1", color: colors.textSecondary };
       case "reopened":
-        return { bgcolor: "#FFF1F0", color: "#FF5F5E" };
+        return { bgcolor: "#FFF3E0", color: colors.accent };
       default:
-        return { bgcolor: "#F3F4F6", color: "#6B7280" };
+        return { bgcolor: "#ECEFF1", color: colors.textSecondary };
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "high":
-        return { bgcolor: "#FFF1F0", color: "#DC2626", icon: <AlertTriangle size={14} /> };
+        return { bgcolor: "#FFEBEE", color: colors.error, icon: <AlertTriangle size={14} /> };
       case "medium":
-        return { bgcolor: "#FEF3C7", color: "#F59E0B", icon: <AlertCircle size={14} /> };
+        return { bgcolor: "#FFF3E0", color: colors.accent, icon: <AlertCircle size={14} /> };
       case "low":
-        return { bgcolor: "#F0F9FF", color: "#3B82F6", icon: <Clock size={14} /> };
+        return { bgcolor: "#E3F2FD", color: colors.secondary, icon: <Clock size={14} /> };
       default:
-        return { bgcolor: "#F3F4F6", color: "#6B7280", icon: <AlertCircle size={14} /> };
+        return { bgcolor: "#ECEFF1", color: colors.textSecondary, icon: <AlertCircle size={14} /> };
     }
   };
 
   const getStats = () => {
     let statsTickets = tickets;
     
-    // If admin, only count their assigned tickets
     if (userRole === "admin" && user?.uid) {
       statsTickets = tickets.filter((t) => t.assignedAdminId === user.uid);
     }
@@ -152,7 +166,7 @@ export default function TicketList() {
       resolved: statsTickets.filter((t) => t.status === "resolved").length,
       closed: statsTickets.filter((t) => t.status === "closed").length,
       reopened: statsTickets.filter((t) => t.status === "reopened").length,
-      unassigned: tickets.filter((t) => !t.assignedAdminId).length, // Always show total unassigned
+      unassigned: tickets.filter((t) => !t.assignedAdminId).length,
     };
   };
 
@@ -193,16 +207,16 @@ export default function TicketList() {
   }
 
   return (
-    <Box sx={{ maxWidth: 1400, mx: "auto", p: { xs: 2, md: 3 } }}>
+    <Box sx={{ maxWidth: 1900, mx: "auto", p: { xs: 2, md: 3 }, bgcolor: colors.lightBg, minHeight: "100vh" }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-3xl font-bold text-[#4F46E5] flex items-center gap-2">
+            <h1 style={{ color: colors.primary }} className="text-3xl font-bold flex items-center gap-2">
               <MessageSquare size={32} />
               Support Tickets
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p style={{ color: colors.textSecondary }} className="mt-1">
               {userRole === "admin" 
                 ? "Manage your assigned support tickets" 
                 : "Manage customer support requests and issues"}
@@ -226,11 +240,10 @@ export default function TicketList() {
             elevation={0}
             sx={{
               p: 3,
-              border: "1px solid",
-              borderColor: "grey.200",
               borderRadius: 3,
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryLight} 100%)`,
               color: "white",
+              boxShadow: "0 4px 20px rgba(94, 53, 177, 0.3)",
             }}
           >
             <div className="flex items-center justify-between">
@@ -246,11 +259,10 @@ export default function TicketList() {
             elevation={0}
             sx={{
               p: 3,
-              border: "1px solid",
-              borderColor: "grey.200",
               borderRadius: 3,
-              background: "linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)",
+              background: `linear-gradient(135deg, ${colors.secondary} 0%, ${colors.secondaryLight} 100%)`,
               color: "white",
+              boxShadow: "0 4px 20px rgba(30, 136, 229, 0.3)",
             }}
           >
             <div className="flex items-center justify-between">
@@ -280,11 +292,9 @@ export default function TicketList() {
             elevation={0}
             sx={{
               p: 3,
-              border: "1px solid",
-              borderColor: "grey.200",
               borderRadius: 3,
-              background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-              color: "white",
+              bgcolor: colors.lavender,
+              color: colors.primary,
             }}
           >
             <div className="flex items-center justify-between">
@@ -300,11 +310,9 @@ export default function TicketList() {
             elevation={0}
             sx={{
               p: 3,
-              border: "1px solid",
-              borderColor: "grey.200",
               borderRadius: 3,
-              background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-              color: "white",
+              bgcolor: "#E3F2FD",
+              color: colors.secondary,
             }}
           >
             <div className="flex items-center justify-between">
@@ -320,11 +328,9 @@ export default function TicketList() {
             elevation={0}
             sx={{
               p: 3,
-              border: "1px solid",
-              borderColor: "grey.200",
               borderRadius: 3,
-              background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-              color: "white",
+              bgcolor: "#E8F5E9",
+              color: colors.success,
             }}
           >
             <div className="flex items-center justify-between">
@@ -340,11 +346,9 @@ export default function TicketList() {
             elevation={0}
             sx={{
               p: 3,
-              border: "1px solid",
-              borderColor: "grey.200",
               borderRadius: 3,
-              background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-              color: "white",
+              bgcolor: "#ECEFF1",
+              color: colors.textSecondary,
             }}
           >
             <div className="flex items-center justify-between">
@@ -360,11 +364,9 @@ export default function TicketList() {
             elevation={0}
             sx={{
               p: 3,
-              border: "1px solid",
-              borderColor: "grey.200",
               borderRadius: 3,
-              background: "linear-gradient(135deg, #FF8C00 0%, #FF6347 100%)",
-              color: "white",
+              bgcolor: "#FFF3E0",
+              color: colors.accent,
             }}
           >
             <div className="flex items-center justify-between">
@@ -384,9 +386,8 @@ export default function TicketList() {
         sx={{
           p: 3,
           mb: 3,
-          border: "1px solid",
-          borderColor: "grey.200",
           borderRadius: 3,
+          bgcolor: colors.cardBg,
         }}
       >
         <div className="flex flex-col gap-3">
@@ -400,7 +401,7 @@ export default function TicketList() {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search size={20} className="text-gray-400" />
+                  <Search size={20} style={{ color: colors.textSecondary }} />
                 </InputAdornment>
               ),
               endAdornment: searchTerm && (
@@ -411,14 +412,31 @@ export default function TicketList() {
                 </InputAdornment>
               ),
             }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: colors.border,
+                },
+                "&:hover fieldset": {
+                  borderColor: colors.primary,
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: colors.primary,
+                },
+              },
+            }}
           />
 
           <div className="flex flex-wrap items-center gap-2">
-            <Filter size={20} className="text-gray-400" />
+            <Filter size={20} style={{ color: colors.textSecondary }} />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              style={{
+                borderColor: colors.border,
+                color: colors.textPrimary,
+              }}
+              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="all">All Status</option>
               <option value="open">Open</option>
@@ -431,7 +449,11 @@ export default function TicketList() {
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              style={{
+                borderColor: colors.border,
+                color: colors.textPrimary,
+              }}
+              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="all">All Priority</option>
               <option value="high">High</option>
@@ -443,7 +465,11 @@ export default function TicketList() {
               <select
                 value={assignmentFilter}
                 onChange={(e) => setAssignmentFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                style={{
+                  borderColor: colors.border,
+                  color: colors.textPrimary,
+                }}
+                className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="all">All Tickets</option>
                 <option value="assigned">Assigned</option>
@@ -453,7 +479,7 @@ export default function TicketList() {
           </div>
         </div>
 
-        <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+        <div className="mt-3 flex items-center gap-2 text-sm" style={{ color: colors.textSecondary }}>
           <span className="font-bold">{filteredTickets.length}</span>
           <span>tickets found</span>
           {(searchTerm || statusFilter !== "all" || priorityFilter !== "all" || assignmentFilter !== "all") && (
@@ -465,7 +491,11 @@ export default function TicketList() {
                 setPriorityFilter("all");
                 setAssignmentFilter("all");
               }}
-              sx={{ textTransform: "none", ml: 1 }}
+              sx={{ 
+                textTransform: "none", 
+                ml: 1,
+                color: colors.primary,
+              }}
             >
               Clear filters
             </Button>
@@ -480,14 +510,13 @@ export default function TicketList() {
           sx={{
             p: 8,
             textAlign: "center",
-            border: "1px solid",
-            borderColor: "grey.200",
             borderRadius: 3,
+            bgcolor: colors.cardBg,
           }}
         >
-          <MessageSquare size={64} className="mx-auto mb-4 text-gray-300" />
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">No tickets found</h3>
-          <p className="text-gray-500">
+          <MessageSquare size={64} className="mx-auto mb-4" style={{ color: colors.border }} />
+          <h3 className="text-xl font-semibold mb-2" style={{ color: colors.textPrimary }}>No tickets found</h3>
+          <p style={{ color: colors.textSecondary }}>
             {searchTerm || statusFilter !== "all" || priorityFilter !== "all" || assignmentFilter !== "all"
               ? "Try adjusting your filters"
               : userRole === "admin"
@@ -507,13 +536,12 @@ export default function TicketList() {
                 elevation={0}
                 sx={{
                   p: 3,
-                  border: "1px solid",
-                  borderColor: "grey.200",
                   borderRadius: 3,
+                  bgcolor: colors.cardBg,
                   transition: "all 0.2s",
                   "&:hover": {
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                    borderColor: "#4F46E5",
+                    boxShadow: "0 4px 20px rgba(94, 53, 177, 0.15)",
+                    transform: "translateY(-2px)",
                   },
                 }}
               >
@@ -521,7 +549,7 @@ export default function TicketList() {
                   <div className="flex gap-4 flex-1">
                     <Avatar
                       sx={{
-                        bgcolor: "#4F46E5",
+                        bgcolor: colors.primary,
                         width: 48,
                         height: 48,
                         fontSize: "1.2rem",
@@ -533,8 +561,10 @@ export default function TicketList() {
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-800 mb-1">{ticket.subject}</h3>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <h3 className="text-lg font-semibold mb-1" style={{ color: colors.textPrimary }}>
+                            {ticket.subject}
+                          </h3>
+                          <div className="flex items-center gap-4 text-sm" style={{ color: colors.textSecondary }}>
                             <span className="flex items-center gap-1">
                               <User size={14} />
                               {ticket.customerName || "Unknown Customer"}
@@ -543,7 +573,7 @@ export default function TicketList() {
                               <Calendar size={14} />
                               {formatDate(ticket.createdAt)}
                             </span>
-                            <span className="text-gray-400">#{ticket.id.slice(0, 8)}</span>
+                            <span style={{ color: colors.border }}>#{ticket.id.slice(0, 8)}</span>
                           </div>
                         </div>
                       </div>
@@ -564,13 +594,13 @@ export default function TicketList() {
                             icon={<User size={14} />}
                             label={`Assigned to: ${ticket.assignedAdminName}`}
                             size="small"
-                            sx={{ bgcolor: "#F0F9FF", color: "#3B82F6", fontWeight: 600 }}
+                            sx={{ bgcolor: "#E3F2FD", color: colors.secondary, fontWeight: 600 }}
                           />
                         ) : (
                           <Chip
                             label="Unassigned"
                             size="small"
-                            sx={{ bgcolor: "#FFF1F0", color: "#FF5F5E", fontWeight: 600 }}
+                            sx={{ bgcolor: "#FFEBEE", color: colors.error, fontWeight: 600 }}
                           />
                         )}
                         {ticket?.messages?.length > 0 && (
@@ -578,7 +608,7 @@ export default function TicketList() {
                             icon={<MessageSquare size={14} />}
                             label={`${ticket.messages.length} Message${ticket.messages.length > 1 ? "s" : ""}`}
                             size="small"
-                            sx={{ bgcolor: "#F6FFED", color: "#6CC464", fontWeight: 600 }}
+                            sx={{ bgcolor: "#E8F5E9", color: colors.success, fontWeight: 600 }}
                           />
                         )}
                         {ticket?.internalNotes?.length > 0 && (
@@ -586,7 +616,7 @@ export default function TicketList() {
                             icon={<FileText size={14} />}
                             label={`${ticket.internalNotes.length} Note${ticket.internalNotes.length > 1 ? "s" : ""}`}
                             size="small"
-                            sx={{ bgcolor: "#FEF3C7", color: "#F59E0B", fontWeight: 600 }}
+                            sx={{ bgcolor: "#FFF3E0", color: colors.accent, fontWeight: 600 }}
                           />
                         )}
                       </div>
@@ -624,9 +654,10 @@ export default function TicketList() {
                       onClick={() => navigate(`/ticket/${ticket.id}`)}
                       sx={{
                         textTransform: "none",
-                        bgcolor: "#4F46E5",
-                        "&:hover": { bgcolor: "#4338CA" },
+                        bgcolor: colors.primary,
+                        "&:hover": { bgcolor: colors.primaryLight },
                         px: 3,
+                        boxShadow: "0 2px 8px rgba(94, 53, 177, 0.3)",
                       }}
                     >
                       Details

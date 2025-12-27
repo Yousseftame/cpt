@@ -184,7 +184,7 @@ export default function PurchaseRequests() {
   }
 
   return (
-    <Box sx={{ maxWidth: 1400, mx: "auto", p: { xs: 2, md: 3 } }}>
+    <Box sx={{ maxWidth: 2100, mx: "auto", p: { xs: 2, md: 3 } }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <div className="flex items-center justify-between mb-2">

@@ -7,6 +7,7 @@ import {
   addDoc, 
   updateDoc, 
   deleteDoc,
+  setDoc,
   query,
   where,
   serverTimestamp,
@@ -46,6 +47,7 @@ interface CustomerContextType {
   getCustomerById: (id: string) => Promise<Customer | null>;
   createCustomer: (customerData: Omit<Customer, 'id' | 'uid' | 'createdAt' | 'purchasedUnits' | 'status' | 'role' | 'createdBy'> & { password: string }) => Promise<void>;
   updateCustomer: (id: string, updates: Partial<Customer>) => Promise<void>;
+  updateCustomerStatus: (id: string, status: 'active' | 'inactive' | 'pending') => Promise<void>;
   deleteCustomer: (id: string) => Promise<void>;
   assignUnit: (customerId: string, unit: PurchasedUnit) => Promise<void>;
   removeUnit: (customerId: string, unit: PurchasedUnit) => Promise<void>;
@@ -111,14 +113,23 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
   const createCustomer = useCallback(async (customerData: Omit<Customer, 'id' | 'uid' | 'createdAt' | 'purchasedUnits' | 'status' | 'role' | 'createdBy'> & { password: string }) => {
     setLoading(true);
     try {
+      // Store the current admin's UID BEFORE creating the customer account
+      const adminUid = auth.currentUser?.uid;
+      
+      if (!adminUid) {
+        throw new Error('You must be logged in as an admin to create customers');
+      }
+
+      // Create customer auth account
       const userCred = await createUserWithEmailAndPassword(
         auth,
         customerData.email,
         customerData.password
       );
 
-      await addDoc(collection(db, 'customers'), {
-        uid: userCred.user.uid,
+      // Save customer to Firestore using auth UID as document ID (matching admins pattern)
+      await setDoc(doc(db, 'customers', userCred.user.uid), {
+        uid: userCred.user.uid,           // Customer's auth UID
         name: customerData.name,
         email: customerData.email,
         phone: customerData.phone,
@@ -126,7 +137,7 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
         role: 'customer',
         status: 'active',
         createdAt: serverTimestamp(),
-        createdBy: auth.currentUser?.uid || 'unknown',
+        createdBy: adminUid,               // Admin's UID who created this customer
         purchasedUnits: [],
       });
 
@@ -154,6 +165,25 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Error updating customer:', error);
       toast.error('Failed to update customer');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchCustomers]);
+
+  const updateCustomerStatus = useCallback(async (id: string, status: 'active' | 'inactive' | 'pending') => {
+    setLoading(true);
+    try {
+      const docRef = doc(db, 'customers', id);
+      await updateDoc(docRef, {
+        status,
+        updatedAt: serverTimestamp(),
+      });
+      toast.success(`Customer status updated to ${status}!`);
+      await fetchCustomers();
+    } catch (error) {
+      console.error('Error updating customer status:', error);
+      toast.error('Failed to update customer status');
       throw error;
     } finally {
       setLoading(false);
@@ -248,6 +278,7 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     getCustomerById,
     createCustomer,
     updateCustomer,
+    updateCustomerStatus,
     deleteCustomer,
     assignUnit,
     removeUnit,

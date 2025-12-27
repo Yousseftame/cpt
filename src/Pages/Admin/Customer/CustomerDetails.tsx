@@ -9,6 +9,9 @@ import {
   Avatar,
   Tab,
   Tabs,
+  Menu,
+  MenuItem,
+  IconButton,
 } from "@mui/material";
 import {
   ArrowLeft,
@@ -20,6 +23,10 @@ import {
   Package,
   User,
   Ticket as TicketIcon,
+  MoreVertical,
+  CheckCircle2,
+  XCircle,
+  Clock,
 } from "lucide-react";
 import CustomerTicketsTab from "./CustomerTicketsTab";
 import { useCustomer } from "../../../store/MasterContext/CustomerContext";
@@ -51,10 +58,11 @@ function TabPanel(props: TabPanelProps) {
 export default function CustomerDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getCustomerById } = useCustomer();
+  const { getCustomerById, updateCustomerStatus } = useCustomer();
   const [customer, setCustomer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
+  const [statusAnchorEl, setStatusAnchorEl] = useState<null | HTMLElement>(null);
 
   // Function to refresh customer data
   const refreshCustomerData = async () => {
@@ -95,6 +103,27 @@ export default function CustomerDetails() {
     setTabValue(newValue);
   };
 
+  const handleStatusMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setStatusAnchorEl(event.currentTarget);
+  };
+
+  const handleStatusMenuClose = () => {
+    setStatusAnchorEl(null);
+  };
+
+  const handleStatusChange = async (newStatus: 'active' | 'inactive' | 'pending') => {
+    if (!id) return;
+    
+    try {
+      await updateCustomerStatus(id, newStatus);
+      await refreshCustomerData();
+    } catch (error) {
+      console.error("Error updating status:", error);
+    } finally {
+      handleStatusMenuClose();
+    }
+  };
+
   const formatDate = (timestamp: any) => {
     if (!timestamp) return "N/A";
     try {
@@ -108,10 +137,35 @@ export default function CustomerDetails() {
     }
   };
 
+  const getStatusIcon = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "active":
+        return <CheckCircle2 size={16} />;
+      case "inactive":
+        return <XCircle size={16} />;
+      case "pending":
+        return <Clock size={16} />;
+      default:
+        return <Clock size={16} />; // Default icon instead of null
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "active":
+        return { bgcolor: "#F6FFED", color: "#6CC464" };
+      case "inactive":
+        return { bgcolor: "#FFF1F0", color: "#FF5F5E" };
+      case "pending":
+        return { bgcolor: "#FEF3C7", color: "#F59E0B" };
+      default:
+        return { bgcolor: "#F3F4F6", color: "#6B7280" };
+    }
+  };
+
   if (loading) {
     return (
-            <PagesLoader text="Loading customer details..." />
-    
+      <PagesLoader text="Loading customer details..." />
     );
   }
 
@@ -119,8 +173,10 @@ export default function CustomerDetails() {
     return null;
   }
 
+  const statusStyle = getStatusColor(customer.status);
+
   return (
-    <Box sx={{ maxWidth: 1400, mx: "auto", p: { xs: 2, md: 3 } }}>
+    <Box sx={{ maxWidth: 2100, mx: "auto", p: { xs: 2, md: 3 } }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Button
@@ -159,25 +215,30 @@ export default function CustomerDetails() {
             <Box>
               <h1 className="text-3xl font-bold text-gray-800">{customer.name}</h1>
               <div className="flex items-center gap-2 mt-1">
-                <Chip
-                  label={customer.status}
-                  size="small"
-                  sx={{
-                    bgcolor:
-                      customer.status === "active"
-                        ? "#F6FFED"
-                        : customer.status === "inactive"
-                        ? "#FFF1F0"
-                        : "#FEF3C7",
-                    color:
-                      customer.status === "active"
-                        ? "#6CC464"
-                        : customer.status === "inactive"
-                        ? "#FF5F5E"
-                        : "#F59E0B",
-                    fontWeight: 600,
-                  }}
-                />
+                <Box sx={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+                  <Chip
+                    icon={getStatusIcon(customer.status)}
+                    label={customer.status}
+                    size="small"
+                    sx={{
+                      bgcolor: statusStyle.bgcolor,
+                      color: statusStyle.color,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      "&:hover": {
+                        opacity: 0.8,
+                      },
+                    }}
+                    onClick={handleStatusMenuOpen}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={handleStatusMenuOpen}
+                    sx={{ ml: 0.5, p: 0.5 }}
+                  >
+                    <MoreVertical size={16} />
+                  </IconButton>
+                </Box>
                 <Chip label={customer.role} size="small" />
               </div>
             </Box>
@@ -200,6 +261,35 @@ export default function CustomerDetails() {
           </Button>
         </Box>
       </Box>
+
+      {/* Status Change Menu */}
+      <Menu
+        anchorEl={statusAnchorEl}
+        open={Boolean(statusAnchorEl)}
+        onClose={handleStatusMenuClose}
+      >
+        <MenuItem
+          onClick={() => handleStatusChange('active')}
+          disabled={customer.status === 'active'}
+        >
+          <CheckCircle2 size={16} className="mr-2 text-green-600" />
+          Active
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleStatusChange('inactive')}
+          disabled={customer.status === 'inactive'}
+        >
+          <XCircle size={16} className="mr-2 text-red-600" />
+          Inactive
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleStatusChange('pending')}
+          disabled={customer.status === 'pending'}
+        >
+          <Clock size={16} className="mr-2 text-yellow-600" />
+          Pending
+        </MenuItem>
+      </Menu>
 
       {/* Quick Stats */}
       <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }, mb: 4 }}>

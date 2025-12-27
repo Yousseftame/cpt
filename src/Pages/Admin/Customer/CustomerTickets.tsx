@@ -465,7 +465,7 @@ const CustomerTickets = () => {
                       variant="contained"
                       size="small"
                       startIcon={<Eye size={16} />}
-                      onClick={() => navigate(`/tickets/${ticket.id}`)}
+                      onClick={() => navigate(`/ticket/${ticket.id}`)}
                       sx={{
                         textTransform: "none",
                         bgcolor: "#4F46E5",

@@ -33,14 +33,17 @@ import {
   Phone,
   MapPin,
   Package,
-  Ticket as TicketIcon
+  Ticket as TicketIcon,
+  CheckCircle2,
+  XCircle,
+  Clock,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCustomer } from "../../../store/MasterContext/CustomerContext";
 import PagesLoader from "../../../components/shared/PagesLoader";
 
 export default function CustomersList() {
-  const { customers, loading, fetchCustomers, deleteCustomer } = useCustomer();
+  const { customers, loading, fetchCustomers, deleteCustomer, updateCustomerStatus } = useCustomer();
   const [filteredCustomers, setFilteredCustomers] = useState(customers);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -50,6 +53,8 @@ export default function CustomersList() {
   const [customerToDelete, setCustomerToDelete] = useState<any>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [statusAnchorEl, setStatusAnchorEl] = useState<null | HTMLElement>(null);
+  const [customerForStatusChange, setCustomerForStatusChange] = useState<any>(null);
 
   const navigate = useNavigate();
 
@@ -107,6 +112,29 @@ export default function CustomersList() {
     setSelectedCustomer(null);
   };
 
+  const handleStatusMenuClick = (event: React.MouseEvent<HTMLElement>, customer: any) => {
+    event.stopPropagation();
+    setStatusAnchorEl(event.currentTarget);
+    setCustomerForStatusChange(customer);
+  };
+
+  const handleStatusMenuClose = () => {
+    setStatusAnchorEl(null);
+    setCustomerForStatusChange(null);
+  };
+
+  const handleStatusChange = async (newStatus: 'active' | 'inactive' | 'pending') => {
+    if (!customerForStatusChange) return;
+
+    try {
+      await updateCustomerStatus(customerForStatusChange.id, newStatus);
+    } catch (error) {
+      console.error("Error updating status:", error);
+    } finally {
+      handleStatusMenuClose();
+    }
+  };
+
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
@@ -122,6 +150,32 @@ export default function CustomersList() {
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
+
+  const getStatusIcon = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "active":
+        return <CheckCircle2 size={14} />;
+      case "inactive":
+        return <XCircle size={14} />;
+      case "pending":
+        return <Clock size={14} />;
+      default:
+        return <Clock size={14} />; // Default icon instead of null
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "active":
+        return { bgcolor: "#F6FFED", color: "#6CC464" };
+      case "inactive":
+        return { bgcolor: "#FFF1F0", color: "#FF5F5E" };
+      case "pending":
+        return { bgcolor: "#FEF3C7", color: "#F59E0B" };
+      default:
+        return { bgcolor: "#F3F4F6", color: "#6B7280" };
+    }
+  };
 
   if (loading && customers.length === 0) {
     return (
@@ -271,91 +325,93 @@ export default function CustomersList() {
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedCustomers.map((customer) => (
-                  <TableRow
-                    key={customer.id}
-                    sx={{
-                      "&:hover": { bgcolor: "#F9FAFB" },
-                      transition: "background-color 0.2s",
-                    }}
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar
-                          sx={{
-                            bgcolor: "#4F46E5",
-                            width: 40,
-                            height: 40,
-                            fontSize: "1rem",
-                          }}
-                        >
-                          {customer.name.charAt(0).toUpperCase()}
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-gray-800">{customer.name}</p>
-                          <p className="text-sm text-gray-500 flex items-center gap-1">
-                            <Mail size={14} />
-                            {customer.email}
-                          </p>
+                paginatedCustomers.map((customer) => {
+                  const statusStyle = getStatusColor(customer.status);
+                  
+                  return (
+                    <TableRow
+                      key={customer.id}
+                      sx={{
+                        "&:hover": { bgcolor: "#F9FAFB" },
+                        transition: "background-color 0.2s",
+                      }}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            sx={{
+                              bgcolor: "#4F46E5",
+                              width: 40,
+                              height: 40,
+                              fontSize: "1rem",
+                            }}
+                          >
+                            {customer.name.charAt(0).toUpperCase()}
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-gray-800">{customer.name}</p>
+                            <p className="text-sm text-gray-500 flex items-center gap-1">
+                              <Mail size={14} />
+                              {customer.email}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-gray-700">
-                        <Phone size={16} className="text-gray-400" />
-                        <span>{customer.phone}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-gray-700">
-                        <MapPin size={16} className="text-gray-400" />
-                        <span className="max-w-[200px] truncate">{customer.address}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        icon={<Package size={14} />}
-                        label={customer.purchasedUnits?.length || 0}
-                        size="small"
-                        sx={{ bgcolor: "#EEF2FF", color: "#4F46E5" }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        icon={<TicketIcon size={14} />}
-                        label={customer.ticketsCount || 0}
-                        size="small"
-                        sx={{ bgcolor: "#FFF1F0", color: "#FF5F5E" }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={customer.status}
-                        size="small"
-                        sx={{
-                          bgcolor:
-                            customer.status === "active"
-                              ? "#F6FFED"
-                              : customer.status === "inactive"
-                                ? "#FFF1F0"
-                                : "#FEF3C7",
-                          color:
-                            customer.status === "active"
-                              ? "#6CC464"
-                              : customer.status === "inactive"
-                                ? "#FF5F5E"
-                                : "#F59E0B",
-                          fontWeight: 600,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell align="center">
-                      <IconButton onClick={(e) => handleMenuClick(e, customer)} size="small">
-                        <MoreVertical size={20} />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-gray-700">
+                          <Phone size={16} className="text-gray-400" />
+                          <span>{customer.phone}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-gray-700">
+                          <MapPin size={16} className="text-gray-400" />
+                          <span className="max-w-[200px] truncate">{customer.address}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          icon={<Package size={14} />}
+                          label={customer.purchasedUnits?.length || 0}
+                          size="small"
+                          sx={{ bgcolor: "#EEF2FF", color: "#4F46E5" }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          icon={<TicketIcon size={14} />}
+                          label={customer.ticketsCount || 0}
+                          size="small"
+                          sx={{ bgcolor: "#FFF1F0", color: "#FF5F5E" }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Chip
+                            icon={getStatusIcon(customer.status)}
+                            label={customer.status}
+                            size="small"
+                            onClick={(e) => handleStatusMenuClick(e, customer)}
+                            sx={{
+                              bgcolor: statusStyle.bgcolor,
+                              color: statusStyle.color,
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              "&:hover": {
+                                opacity: 0.8,
+                              },
+                            }}
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell align="center">
+                        <IconButton onClick={(e) => handleMenuClick(e, customer)} size="small">
+                          <MoreVertical size={20} />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -407,6 +463,35 @@ export default function CustomersList() {
         >
           <Trash2 size={16} className="mr-2" />
           Delete
+        </MenuItem>
+      </Menu>
+
+      {/* Status Change Menu */}
+      <Menu
+        anchorEl={statusAnchorEl}
+        open={Boolean(statusAnchorEl)}
+        onClose={handleStatusMenuClose}
+      >
+        <MenuItem
+          onClick={() => handleStatusChange('active')}
+          disabled={customerForStatusChange?.status === 'active'}
+        >
+          <CheckCircle2 size={16} className="mr-2 text-green-600" />
+          Active
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleStatusChange('inactive')}
+          disabled={customerForStatusChange?.status === 'inactive'}
+        >
+          <XCircle size={16} className="mr-2 text-red-600" />
+          Inactive
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleStatusChange('pending')}
+          disabled={customerForStatusChange?.status === 'pending'}
+        >
+          <Clock size={16} className="mr-2 text-yellow-600" />
+          Pending
         </MenuItem>
       </Menu>
 

@@ -37,6 +37,23 @@ import { useAuth } from "../../../store/AuthContext/AuthContext";
 import PagesLoader from "../../../components/shared/PagesLoader";
 import { db } from "../../../service/firebase";
 
+// Purple & Blue Color Palette (from Berry dashboard)
+const colors = {
+  primary: "#5E35B1",      // Deep purple
+  primaryLight: "#7E57C2", // Light purple
+  secondary: "#1E88E5",    // Bright blue
+  secondaryLight: "#42A5F5", // Light blue
+  accent: "#FFB74D",       // Warm orange/yellow
+  success: "#66BB6A",      // Green
+  error: "#EF5350",        // Red
+  lightBg: "#F5F5F5",      // Light gray background
+  cardBg: "#FFFFFF",       // White
+  textPrimary: "#263238",  // Dark text
+  textSecondary: "#607D8B", // Gray text
+  border: "#E0E0E0",       // Light border
+  lavender: "#EDE7F6",     // Very light purple
+};
+
 export default function TicketDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -131,17 +148,17 @@ export default function TicketDetails() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "open":
-        return { bgcolor: "#EEF2FF", color: "#4F46E5" };
+        return { bgcolor: colors.lavender, color: colors.primary };
       case "in_progress":
-        return { bgcolor: "#FEF3C7", color: "#F59E0B" };
+        return { bgcolor: "#E3F2FD", color: colors.secondary };
       case "resolved":
-        return { bgcolor: "#F6FFED", color: "#6CC464" };
+        return { bgcolor: "#E8F5E9", color: colors.success };
       case "closed":
-        return { bgcolor: "#F3F4F6", color: "#6B7280" };
+        return { bgcolor: "#ECEFF1", color: colors.textSecondary };
       case "reopened":
-        return { bgcolor: "#FFF1F0", color: "#FF5F5E" };
+        return { bgcolor: "#FFF3E0", color: colors.accent };
       default:
-        return { bgcolor: "#F3F4F6", color: "#6B7280" };
+        return { bgcolor: "#ECEFF1", color: colors.textSecondary };
     }
   };
 

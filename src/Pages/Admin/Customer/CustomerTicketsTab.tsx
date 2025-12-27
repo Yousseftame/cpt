@@ -135,7 +135,7 @@ export default function CustomerTicketsTab({ customerId }: CustomerTicketsTabPro
                   </div>
                 </div>
               </div>
-              <Button
+              {/* <Button
                 size="small"
                 variant="outlined"
                 onClick={() => navigate(`/tickets/${ticket.id}`)}
@@ -145,7 +145,7 @@ export default function CustomerTicketsTab({ customerId }: CustomerTicketsTabPro
                 }}
               >
                 View
-              </Button>
+              </Button> */}
             </div>
           </div>
         ))}

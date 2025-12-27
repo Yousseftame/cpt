@@ -317,7 +317,7 @@ export default function GeneratorList() {
                         <Chip 
                         label= {`$${model.price.toLocaleString()}`}
                         size="small" 
-                        sx={{ bgcolor: '#F6FFED', color: '#6CC464' }}
+                        sx={{ bgcolor: '#F6FFED', color: 'green' }}
                       /></span>
                     </TableCell>
                     <TableCell>
