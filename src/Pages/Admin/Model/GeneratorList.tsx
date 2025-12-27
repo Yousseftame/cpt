@@ -174,7 +174,7 @@ export default function GeneratorList() {
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold  text-[#4F46E5]">Generator Models</h1>
+          <h1 className="text-3xl font-bold  text-[#5E35B1]">Generator Models</h1>
           <p className="text-gray-600 mt-1">Manage your generator inventory</p>
         </div>
         <Button
@@ -183,7 +183,7 @@ export default function GeneratorList() {
           onClick={() => navigate("/models/add")}
           sx={{
             bgcolor: '#5E35B1',
-            '&:hover': { bgcolor: '#4338CA' },
+            '&:hover': { bgcolor: '#5E35B1' },
             textTransform: 'none',
             px: 3,
             py: 1.5,
