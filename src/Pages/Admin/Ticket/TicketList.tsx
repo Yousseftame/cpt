@@ -573,7 +573,7 @@ export default function TicketList() {
                               <Calendar size={14} />
                               {formatDate(ticket.createdAt)}
                             </span>
-                            <span style={{ color: colors.border }}>#{ticket.id.slice(0, 8)}</span>
+                            <span style={{ color: colors.textSecondary }}>#{ticket.id.slice(0, 8)}</span>
                           </div>
                         </div>
                       </div>

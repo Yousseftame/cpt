@@ -227,9 +227,9 @@ export default function CreateCustomer() {
                 textTransform: "none",
                 px: 4,
                 py: 1.5,
-                bgcolor: "#4F46E5",
+                bgcolor: "#5E35B1",
                 borderRadius: 2,
-                "&:hover": { bgcolor: "#4338CA" },
+                "&:hover": { bgcolor: "#5E35B1" },
               }}
             >
               {loading ? "Creating..." : "Create Customer"}

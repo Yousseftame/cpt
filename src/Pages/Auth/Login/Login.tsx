@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight, EyeClosed } from 'lucide-react';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth, db } from '../../../service/firebase';
 import { useNavigate } from 'react-router-dom';
@@ -117,6 +117,7 @@ const Login = () => {
           disabled={loading}
           showPasswordToggle
         />
+        
 
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -126,7 +127,7 @@ const Login = () => {
               onChange={(e) => setRememberMe(e.target.checked)}
               className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
             />
-            <span className="text-sm text-gray-700">Remember me</span>
+            <span  className="text-sm text-gray-700">Remember me</span>
           </label>
 
           <button

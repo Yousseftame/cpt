@@ -340,7 +340,12 @@ export default function TicketDetails() {
                 sx={{ ...priorityStyle, fontWeight: 600, cursor: "pointer" }}
                 onClick={() => setPriorityDialog(true)}
               />
-              <span className="text-sm text-gray-500">#{ticket.id.slice(0, 8)}</span>
+              <Chip
+                label={`#${ticket.id.slice(0, 8)}`}
+                size="small"
+                sx={{ color: colors.textSecondary, fontWeight: 600 }}
+              />
+             
             </div>
           </Box>
 

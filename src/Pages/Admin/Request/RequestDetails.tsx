@@ -631,7 +631,7 @@ export default function RequestDetails() {
                     px : 2,
                     textTransform: "none",
                     bgcolor: "#5E35B1",
-                    "&:hover": { bgcolor: "#4338CA" },
+                    "&:hover": { bgcolor: "#5E35B1" },
                   }}
                 >
                   Assign Unit
@@ -806,10 +806,11 @@ export default function RequestDetails() {
             onClick={handleAssignUnit}
             variant="contained"
             sx={{
-              
+              py : 1,
+              px : 2,
               textTransform: "none",
-              bgcolor: "#4F46E5",
-              "&:hover": { bgcolor: "#4338CA" },
+              bgcolor: "#5E35B1",
+              "&:hover": { bgcolor: "#5E35B1" },
             }}
           >
             Assign Unit

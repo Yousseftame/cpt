@@ -1,5 +1,5 @@
 import React, { useState, type InputHTMLAttributes } from 'react';
-import { Eye, EyeOff, type LucideIcon } from 'lucide-react';
+import { Eye, EyeClosed , type LucideIcon } from 'lucide-react';
 
 interface AuthInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'className'> {
   label: string;
@@ -56,7 +56,7 @@ const AuthInput: React.FC<AuthInputProps> = ({
             disabled={disabled}
             className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
           >
-            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            {showPassword ? <EyeClosed size={20} /> : <Eye size={20} />}
           </button>
         )}
       </div>

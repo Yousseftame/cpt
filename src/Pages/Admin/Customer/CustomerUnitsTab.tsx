@@ -168,9 +168,11 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
           startIcon={<Plus size={16} />}
           onClick={() => setAssignDialog(true)}
           sx={{
+            py : 1,
+            px : 2,
             textTransform: "none",
-            bgcolor: "#4F46E5",
-            "&:hover": { bgcolor: "#4338CA" },
+            bgcolor: "#5E35B1",
+            "&:hover": { bgcolor: "#5E35B1" },
           }}
         >
           Assign Unit
@@ -271,9 +273,11 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
             onClick={handleAssign}
             variant="contained"
             sx={{
+              px : 2, 
+              py : 1,
               textTransform: "none",
-              bgcolor: "#4F46E5",
-              "&:hover": { bgcolor: "#4338CA" },
+              bgcolor: "#5E35B1",
+              "&:hover": { bgcolor: "#5E35B1" },
             }}
           >
             Assign Unit
