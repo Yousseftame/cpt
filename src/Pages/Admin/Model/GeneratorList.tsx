@@ -182,7 +182,7 @@ export default function GeneratorList() {
           startIcon={<Plus size={20} />}
           onClick={() => navigate("/models/add")}
           sx={{
-            bgcolor: '#4F46E5',
+            bgcolor: '#5E35B1',
             '&:hover': { bgcolor: '#4338CA' },
             textTransform: 'none',
             px: 3,

@@ -124,7 +124,7 @@ export default function SideBar({ isOpen, setIsOpen }: SideBarProps) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-full bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white transition-all duration-300 z-50 ${
+        className={`fixed left-0 top-0 h-full bg-gradient-to-b from-slate-900 via-slate-800 to-[#734BBC] text-white transition-all duration-300 z-50 ${
           isOpen ? 'w-64' : 'w-0 lg:w-20'
         } overflow-hidden`}
       >
@@ -154,8 +154,8 @@ export default function SideBar({ isOpen, setIsOpen }: SideBarProps) {
           <div className="p-4">
             <div className={`px-3 py-2 rounded-lg text-sm font-medium ${
               role === 'superAdmin' 
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600' 
-                : 'bg-gradient-to-r from-blue-600 to-cyan-600'
+                ? 'bg-gradient-to-r from-[#692CEA] to-[]' 
+                : 'bg-gradient-to-r from-blue-600 to-[]'
             }`}>
               {role === 'superAdmin' ? ' Super Admin' : ' Admin'}
             </div>
@@ -176,7 +176,7 @@ export default function SideBar({ isOpen, setIsOpen }: SideBarProps) {
                   onClick={() => hasSubmenu ? toggleSubmenu(item.id) : handleNavigation(item.path!)}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 group ${
                     !isOpen && 'lg:justify-center'
-                  } ${active ? 'bg-indigo-600' : 'hover:bg-slate-700/50'}`}
+                  } ${active ? 'bg-[#5E35B1]' : 'hover:bg-[#5E35B1]'}`}
                 >
                   <div className="flex items-center gap-3">
                     <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-indigo-400'}`} />
@@ -213,7 +213,7 @@ export default function SideBar({ isOpen, setIsOpen }: SideBarProps) {
                         onClick={() => handleNavigation(subItem.path)}
                         className={`w-full text-left px-4 py-2 text-sm rounded-lg transition-colors ${
                           isActive(subItem.path) 
-                            ? 'bg-indigo-600/50 text-white' 
+                            ? 'bg-[#5E35B1] text-white' 
                             : 'text-slate-400 hover:text-white hover:bg-slate-700/30'
                         }`}
                       >

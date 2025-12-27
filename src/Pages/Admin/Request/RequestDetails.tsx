@@ -50,6 +50,22 @@ import {
 import toast from "react-hot-toast";
 import PagesLoader from "../../../components/shared/PagesLoader";
 
+const colors = {
+  primary: "#5E35B1",
+  primaryLight: "#7E57C2",
+  secondary: "#1E88E5",
+  secondaryLight: "#42A5F5",
+  accent: "#FFB74D",
+  success: "#66BB6A",
+  error: "#EF5350",
+  lightBg: "#F5F5F5",
+  cardBg: "#FFFFFF",
+  textPrimary: "#263238",
+  textSecondary: "#607D8B",
+  border: "#E0E0E0",
+  lavender: "#EDE7F6",
+};
+
 interface GeneratorModel {
   id: string;
   name: string;
@@ -397,7 +413,7 @@ export default function RequestDetails() {
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Avatar
               sx={{
-                bgcolor: "#4F46E5",
+                bgcolor: "#5E35B1",
                 width: 64,
                 height: 64,
                 fontSize: "1.5rem",
@@ -483,11 +499,10 @@ export default function RequestDetails() {
           elevation={0}
           sx={{
             p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
             borderRadius: 3,
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryLight} 100%)`,
             color: "white",
+            boxShadow: "0 4px 20px rgba(94, 53, 177, 0.3)",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -503,17 +518,16 @@ export default function RequestDetails() {
           elevation={0}
           sx={{
             p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
             borderRadius: 3,
-            background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+            background: `linear-gradient(135deg, ${colors.secondary} 0%, ${colors.secondaryLight} 100%)`,
             color: "white",
+            boxShadow: "0 4px 20px rgba(30, 136, 229, 0.3)",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <CheckCircle2 size={32} />
             <Box>
-              <p className="text-sm opacity-90">Assigned Units</p>
+              <p className="text-sm opacity-90 ">Assigned Units</p>
               <p className="text-3xl font-bold">{request.assignedUnits?.length || 0}</p>
             </Box>
           </Box>
@@ -523,11 +537,10 @@ export default function RequestDetails() {
           elevation={0}
           sx={{
             p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
             borderRadius: 3,
-            background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+            background: `linear-gradient(135deg, ${colors.accent} 0%, #FFA726 100%)`,
             color: "white",
+            boxShadow: "0 4px 20px rgba(255, 183, 77, 0.3)",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -614,8 +627,10 @@ export default function RequestDetails() {
                   startIcon={<Plus size={16} />}
                   onClick={() => setAssignDialog(true)}
                   sx={{
+                    py : 1,
+                    px : 2,
                     textTransform: "none",
-                    bgcolor: "#4F46E5",
+                    bgcolor: "#5E35B1",
                     "&:hover": { bgcolor: "#4338CA" },
                   }}
                 >
@@ -791,6 +806,7 @@ export default function RequestDetails() {
             onClick={handleAssignUnit}
             variant="contained"
             sx={{
+              
               textTransform: "none",
               bgcolor: "#4F46E5",
               "&:hover": { bgcolor: "#4338CA" },
