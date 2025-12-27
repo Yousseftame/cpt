@@ -657,6 +657,7 @@ export default function TicketList() {
                         bgcolor: colors.primary,
                         "&:hover": { bgcolor: colors.primaryLight },
                         px: 3,
+                        py : 1,
                         boxShadow: "0 2px 8px rgba(94, 53, 177, 0.3)",
                       }}
                     >

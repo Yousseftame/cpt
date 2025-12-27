@@ -33,6 +33,23 @@ import { useCustomer } from "../../../store/MasterContext/CustomerContext";
 import CustomerUnitsTab from "./CustomerUnitsTab";
 import PagesLoader from "../../../components/shared/PagesLoader";
 
+// Purple & Blue Color Palette
+const colors = {
+  primary: "#5E35B1",
+  primaryLight: "#7E57C2",
+  secondary: "#1E88E5",
+  secondaryLight: "#42A5F5",
+  accent: "#FFB74D",
+  success: "#66BB6A",
+  error: "#EF5350",
+  lightBg: "#F5F5F5",
+  cardBg: "#FFFFFF",
+  textPrimary: "#263238",
+  textSecondary: "#607D8B",
+  border: "#E0E0E0",
+  lavender: "#EDE7F6",
+};
+
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -64,7 +81,6 @@ export default function CustomerDetails() {
   const [tabValue, setTabValue] = useState(0);
   const [statusAnchorEl, setStatusAnchorEl] = useState<null | HTMLElement>(null);
 
-  // Function to refresh customer data
   const refreshCustomerData = async () => {
     if (!id) return;
     
@@ -146,27 +162,25 @@ export default function CustomerDetails() {
       case "pending":
         return <Clock size={16} />;
       default:
-        return <Clock size={16} />; // Default icon instead of null
+        return <Clock size={16} />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "active":
-        return { bgcolor: "#F6FFED", color: "#6CC464" };
+        return { bgcolor: "#E8F5E9", color: colors.success };
       case "inactive":
-        return { bgcolor: "#FFF1F0", color: "#FF5F5E" };
+        return { bgcolor: "#FFEBEE", color: colors.error };
       case "pending":
-        return { bgcolor: "#FEF3C7", color: "#F59E0B" };
+        return { bgcolor: "#FFF3E0", color: colors.accent };
       default:
-        return { bgcolor: "#F3F4F6", color: "#6B7280" };
+        return { bgcolor: "#ECEFF1", color: colors.textSecondary };
     }
   };
 
   if (loading) {
-    return (
-      <PagesLoader text="Loading customer details..." />
-    );
+    return <PagesLoader text="Loading customer details..." />;
   }
 
   if (!customer) {
@@ -176,7 +190,7 @@ export default function CustomerDetails() {
   const statusStyle = getStatusColor(customer.status);
 
   return (
-    <Box sx={{ maxWidth: 2100, mx: "auto", p: { xs: 2, md: 3 } }}>
+    <Box sx={{ maxWidth: 2100, mx: "auto", p: { xs: 2, md: 3 }, bgcolor: colors.lightBg, minHeight: "100vh" }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Button
@@ -187,6 +201,12 @@ export default function CustomerDetails() {
             textTransform: "none",
             mb: 2,
             borderRadius: 2,
+            borderColor: colors.border,
+            color: colors.textPrimary,
+            "&:hover": {
+              borderColor: colors.primary,
+              bgcolor: colors.lavender,
+            },
           }}
         >
           Back to Customers
@@ -204,7 +224,7 @@ export default function CustomerDetails() {
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Avatar
               sx={{
-                bgcolor: "#4F46E5",
+                bgcolor: colors.primary,
                 width: 64,
                 height: 64,
                 fontSize: "1.5rem",
@@ -213,7 +233,9 @@ export default function CustomerDetails() {
               {customer.name.charAt(0).toUpperCase()}
             </Avatar>
             <Box>
-              <h1 className="text-3xl font-bold text-gray-800">{customer.name}</h1>
+              <h1 style={{ color: colors.textPrimary }} className="text-3xl font-bold">
+                {customer.name}
+              </h1>
               <div className="flex items-center gap-2 mt-1">
                 <Box sx={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
                   <Chip
@@ -239,7 +261,11 @@ export default function CustomerDetails() {
                     <MoreVertical size={16} />
                   </IconButton>
                 </Box>
-                <Chip label={customer.role} size="small" />
+                <Chip 
+                  label={customer.role} 
+                  size="small"
+                  sx={{ bgcolor: colors.lavender, color: colors.primary }}
+                />
               </div>
             </Box>
           </Box>
@@ -252,9 +278,10 @@ export default function CustomerDetails() {
               textTransform: "none",
               px: 4,
               py: 1.5,
-              bgcolor: "#4F46E5",
+              bgcolor: colors.primary,
               borderRadius: 2,
-              "&:hover": { bgcolor: "#4338CA" },
+              boxShadow: "0 4px 20px rgba(94, 53, 177, 0.3)",
+              "&:hover": { bgcolor: colors.primaryLight },
             }}
           >
             Edit Customer
@@ -272,106 +299,119 @@ export default function CustomerDetails() {
           onClick={() => handleStatusChange('active')}
           disabled={customer.status === 'active'}
         >
-          <CheckCircle2 size={16} className="mr-2 text-green-600" />
+          <CheckCircle2 size={16} className="mr-2" style={{ color: colors.success }} />
           Active
         </MenuItem>
         <MenuItem
           onClick={() => handleStatusChange('inactive')}
           disabled={customer.status === 'inactive'}
         >
-          <XCircle size={16} className="mr-2 text-red-600" />
+          <XCircle size={16} className="mr-2" style={{ color: colors.error }} />
           Inactive
         </MenuItem>
         <MenuItem
           onClick={() => handleStatusChange('pending')}
           disabled={customer.status === 'pending'}
         >
-          <Clock size={16} className="mr-2 text-yellow-600" />
+          <Clock size={16} className="mr-2" style={{ color: colors.accent }} />
           Pending
         </MenuItem>
       </Menu>
 
       {/* Quick Stats */}
-      <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }, mb: 4 }}>
-        <Paper
-          elevation={0}
+      <Box sx={{ mb: 4 }}>
+        {/* First Row */}
+        <Box
           sx={{
-            p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 3,
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white",
+            display: "grid",
+            gap: 3,
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
+            mb: 3,
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Package size={32} />
-            <Box>
-              <p className="text-sm opacity-90">Purchased Units</p>
-              <p className="text-3xl font-bold">{customer.purchasedUnits?.length || 0}</p>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryLight} 100%)`,
+              color: "white",
+              boxShadow: "0 4px 20px rgba(94, 53, 177, 0.3)",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Package size={32} />
+              <Box>
+                <p className="text-sm opacity-90">Purchased Units</p>
+                <p className="text-3xl font-bold">{customer.purchasedUnits?.length || 0}</p>
+              </Box>
             </Box>
-          </Box>
-        </Paper>
+          </Paper>
 
-        <Paper
-          elevation={0}
-          sx={{
-            p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 3,
-            background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-            color: "white",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <TicketIcon size={32} />
-            <Box>
-              <p className="text-sm opacity-90">Total Tickets</p>
-              <p className="text-3xl font-bold">{customer.ticketsCount || 0}</p>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              background: `linear-gradient(135deg, ${colors.secondary} 0%, ${colors.secondaryLight} 100%)`,
+              color: "white",
+              boxShadow: "0 4px 20px rgba(30, 136, 229, 0.3)",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <TicketIcon size={32} />
+              <Box>
+                <p className="text-sm opacity-90">Total Tickets</p>
+                <p className="text-3xl font-bold">{customer.ticketsCount || 0}</p>
+              </Box>
             </Box>
-          </Box>
-        </Paper>
+          </Paper>
+        </Box>
 
-        <Paper
-          elevation={0}
+        {/* Second Row */}
+        <Box
           sx={{
-            p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 3,
-            background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-            color: "white",
+            display: "grid",
+            gap: 3,
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <User size={32} />
-            <Box>
-              <p className="text-sm opacity-90">Customer Since</p>
-              <p className="text-lg font-bold">{formatDate(customer.createdAt)}</p>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              bgcolor: colors.lavender,
+              color: colors.primary,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <User size={32} />
+              <Box>
+                <p className="text-sm opacity-90">Customer Since</p>
+                <p className="text-lg font-bold">{formatDate(customer.createdAt)}</p>
+              </Box>
             </Box>
-          </Box>
-        </Paper>
+          </Paper>
 
-        <Paper
-          elevation={0}
-          sx={{
-            p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 3,
-            background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-            color: "white",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Calendar size={32} />
-            <Box>
-              <p className="text-sm opacity-90">Account Status</p>
-              <p className="text-lg font-bold capitalize">{customer.status}</p>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              bgcolor: "#FFF3E0",
+              color: colors.accent,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Calendar size={32} />
+              <Box>
+                <p className="text-sm opacity-90">Account Status</p>
+                <p className="text-lg font-bold capitalize">{customer.status}</p>
+              </Box>
             </Box>
-          </Box>
-        </Paper>
+          </Paper>
+        </Box>
       </Box>
 
       {/* Main Content Grid */}
@@ -381,46 +421,55 @@ export default function CustomerDetails() {
           elevation={0}
           sx={{
             p: 4,
-            border: "1px solid",
-            borderColor: "grey.200",
             borderRadius: 3,
+            bgcolor: colors.cardBg,
             height: "fit-content",
           }}
         >
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Contact Information</h2>
+          <h2 style={{ color: colors.textPrimary }} className="text-xl font-semibold mb-4">
+            Contact Information
+          </h2>
           <Divider sx={{ mb: 3 }} />
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                <Mail size={16} className="text-gray-500" />
-                <span className="text-sm text-gray-500">Email</span>
+                <Mail size={16} style={{ color: colors.textSecondary }} />
+                <span className="text-sm" style={{ color: colors.textSecondary }}>Email</span>
               </Box>
-              <p className="text-gray-900 font-medium">{customer.email}</p>
+              <p style={{ color: colors.textPrimary }} className="font-medium">
+                {customer.email}
+              </p>
             </Box>
 
             <Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                <Phone size={16} className="text-gray-500" />
-                <span className="text-sm text-gray-500">Phone</span>
+                <Phone size={16} style={{ color: colors.textSecondary }} />
+                <span className="text-sm" style={{ color: colors.textSecondary }}>Phone</span>
               </Box>
-              <p className="text-gray-900 font-medium">{customer.phone}</p>
+              <p style={{ color: colors.textPrimary }} className="font-medium">
+                {customer.phone}
+              </p>
             </Box>
 
             <Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                <MapPin size={16} className="text-gray-500" />
-                <span className="text-sm text-gray-500">Address</span>
+                <MapPin size={16} style={{ color: colors.textSecondary }} />
+                <span className="text-sm" style={{ color: colors.textSecondary }}>Address</span>
               </Box>
-              <p className="text-gray-900 font-medium">{customer.address}</p>
+              <p style={{ color: colors.textPrimary }} className="font-medium">
+                {customer.address}
+              </p>
             </Box>
 
             <Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                <Calendar size={16} className="text-gray-500" />
-                <span className="text-sm text-gray-500">Created At</span>
+                <Calendar size={16} style={{ color: colors.textSecondary }} />
+                <span className="text-sm" style={{ color: colors.textSecondary }}>Created At</span>
               </Box>
-              <p className="text-gray-900 font-medium">{formatDate(customer.createdAt)}</p>
+              <p style={{ color: colors.textPrimary }} className="font-medium">
+                {formatDate(customer.createdAt)}
+              </p>
             </Box>
           </Box>
         </Paper>
@@ -429,13 +478,27 @@ export default function CustomerDetails() {
         <Paper
           elevation={0}
           sx={{
-            border: "1px solid",
-            borderColor: "grey.200",
             borderRadius: 3,
+            bgcolor: colors.cardBg,
           }}
         >
-          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-            <Tabs value={tabValue} onChange={handleTabChange} sx={{ px: 2 }}>
+          <Box sx={{ borderBottom: 1, borderColor: colors.border }}>
+            <Tabs 
+              value={tabValue} 
+              onChange={handleTabChange} 
+              sx={{ 
+                px: 2,
+                "& .MuiTab-root": {
+                  color: colors.textSecondary,
+                },
+                "& .Mui-selected": {
+                  color: `${colors.primary} !important`,
+                },
+                "& .MuiTabs-indicator": {
+                  backgroundColor: colors.primary,
+                },
+              }}
+            >
               <Tab
                 label={`Units (${customer.purchasedUnits?.length || 0})`}
                 sx={{ textTransform: "none", fontWeight: 600 }}

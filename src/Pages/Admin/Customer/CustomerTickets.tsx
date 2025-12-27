@@ -12,7 +12,6 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  
 } from "@mui/material";
 import {
   ArrowLeft,
@@ -26,9 +25,28 @@ import {
   Eye,
   TrendingUp,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw,
+  MessageSquare,
 } from "lucide-react";
 import PagesLoader from "../../../components/shared/PagesLoader";
+
+// Purple & Blue Color Palette
+const colors = {
+  primary: "#5E35B1",
+  primaryLight: "#7E57C2",
+  secondary: "#1E88E5",
+  secondaryLight: "#42A5F5",
+  accent: "#FFB74D",
+  success: "#66BB6A",
+  error: "#EF5350",
+  lightBg: "#F5F5F5",
+  cardBg: "#FFFFFF",
+  textPrimary: "#263238",
+  textSecondary: "#607D8B",
+  border: "#E0E0E0",
+  lavender: "#EDE7F6",
+};
 
 interface TicketData {
   id: string;
@@ -56,7 +74,7 @@ const CustomerTickets = () => {
       const q = query(
         collection(db, "tickets"),
         where("customerId", "==", id),
-        orderBy("createdAt", "desc")   // composite index 
+        orderBy("createdAt", "desc")
       );
 
       const snapshot = await getDocs(q);
@@ -116,28 +134,31 @@ const CustomerTickets = () => {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "open":
-        return { bgcolor: "#EEF2FF", color: "#4F46E5", icon: <AlertCircle size={16} /> };
+        return { bgcolor: colors.lavender, color: colors.primary, icon: <AlertCircle size={16} /> };
       case "in progress":
-        return { bgcolor: "#FEF3C7", color: "#F59E0B", icon: <TrendingUp size={16} /> };
+      case "in_progress":
+        return { bgcolor: "#E3F2FD", color: colors.secondary, icon: <TrendingUp size={16} /> };
       case "resolved":
-        return { bgcolor: "#F6FFED", color: "#6CC464", icon: <CheckCircle2 size={16} /> };
+        return { bgcolor: "#E8F5E9", color: colors.success, icon: <CheckCircle2 size={16} /> };
       case "closed":
-        return { bgcolor: "#F3F4F6", color: "#6B7280", icon: <CheckCircle2 size={16} /> };
+        return { bgcolor: "#ECEFF1", color: colors.textSecondary, icon: <CheckCircle2 size={16} /> };
+      case "reopened":
+        return { bgcolor: "#FFF3E0", color: colors.accent, icon: <RefreshCw size={16} /> };
       default:
-        return { bgcolor: "#F3F4F6", color: "#6B7280", icon: <AlertCircle size={16} /> };
+        return { bgcolor: "#ECEFF1", color: colors.textSecondary, icon: <AlertCircle size={16} /> };
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority?.toLowerCase()) {
       case "high":
-        return { bgcolor: "#FFF1F0", color: "#FF5F5E", icon: <AlertTriangle size={16} /> };
+        return { bgcolor: "#FFEBEE", color: colors.error, icon: <AlertTriangle size={16} /> };
       case "medium":
-        return { bgcolor: "#FEF3C7", color: "#F59E0B", icon: <AlertCircle size={16} /> };
+        return { bgcolor: "#FFF3E0", color: colors.accent, icon: <AlertCircle size={16} /> };
       case "low":
-        return { bgcolor: "#F0F9FF", color: "#3B82F6", icon: <Clock size={16} /> };
+        return { bgcolor: "#E3F2FD", color: colors.secondary, icon: <Clock size={16} /> };
       default:
-        return { bgcolor: "#F3F4F6", color: "#6B7280", icon: <AlertCircle size={16} /> };
+        return { bgcolor: "#ECEFF1", color: colors.textSecondary, icon: <AlertCircle size={16} /> };
     }
   };
 
@@ -165,7 +186,7 @@ const CustomerTickets = () => {
 
   const getTicketStats = () => {
     const open = tickets.filter(t => t.status?.toLowerCase() === "open").length;
-    const inProgress = tickets.filter(t => t.status?.toLowerCase() === "in progress").length;
+    const inProgress = tickets.filter(t => t.status?.toLowerCase() === "in progress" || t.status?.toLowerCase() === "in_progress").length;
     const resolved = tickets.filter(t => t.status?.toLowerCase() === "resolved").length;
     const closed = tickets.filter(t => t.status?.toLowerCase() === "closed").length;
 
@@ -175,14 +196,11 @@ const CustomerTickets = () => {
   const stats = getTicketStats();
 
   if (loading) {
-    return (
-      <PagesLoader text="Loading tickets..." />
-
-    );
+    return <PagesLoader text="Loading tickets..." />;
   }
 
   return (
-    <Box sx={{ maxWidth: 1400, mx: "auto", p: { xs: 2, md: 3 } }}>
+    <Box sx={{ maxWidth: 1900, mx: "auto", p: { xs: 2, md: 3 }, bgcolor: colors.lightBg, minHeight: "100vh" }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Button
@@ -193,101 +211,120 @@ const CustomerTickets = () => {
             textTransform: "none",
             mb: 2,
             borderRadius: 2,
+            borderColor: colors.border,
+            color: colors.textPrimary,
+            "&:hover": {
+              borderColor: colors.primary,
+              bgcolor: colors.lavender,
+            },
           }}
         >
           Back to Customers
         </Button>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <TicketIcon size={32} className="text-indigo-600" />
+          <MessageSquare size={32} style={{ color: colors.primary }} />
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Customer Tickets</h1>
-            <p className="text-gray-600">View and manage all support tickets</p>
+            <h1 style={{ color: colors.primary }} className="text-3xl font-bold">
+              Customer Tickets
+            </h1>
+            <p style={{ color: colors.textSecondary }}>View and manage all support tickets</p>
           </div>
         </Box>
       </Box>
 
       {/* Stats Cards */}
-      <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }, mb: 4 }}>
-        <Paper
-          elevation={0}
+      <Box sx={{ mb: 4 }}>
+        <Box
           sx={{
-            p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 3,
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white",
+            display: "grid",
+            gap: 3,
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
+            mb: 3,
           }}
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm opacity-90">Open</p>
-              <p className="text-3xl font-bold mt-1">{stats.open}</p>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryLight} 100%)`,
+              color: "white",
+              boxShadow: "0 4px 20px rgba(94, 53, 177, 0.3)",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Open</p>
+                <p className="text-3xl font-bold mt-1">{stats.open}</p>
+              </div>
+              <AlertCircle size={40} className="opacity-75" />
             </div>
-            <AlertCircle size={40} className="opacity-75" />
-          </div>
-        </Paper>
+          </Paper>
 
-        <Paper
-          elevation={0}
-          sx={{
-            p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 3,
-            background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-            color: "white",
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm opacity-90">In Progress</p>
-              <p className="text-3xl font-bold mt-1">{stats.inProgress}</p>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              background: `linear-gradient(135deg, ${colors.secondary} 0%, ${colors.secondaryLight} 100%)`,
+              color: "white",
+              boxShadow: "0 4px 20px rgba(30, 136, 229, 0.3)",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">In Progress</p>
+                <p className="text-3xl font-bold mt-1">{stats.inProgress}</p>
+              </div>
+              <TrendingUp size={40} className="opacity-75" />
             </div>
-            <TrendingUp size={40} className="opacity-75" />
-          </div>
-        </Paper>
+          </Paper>
+        </Box>
 
-        <Paper
-          elevation={0}
+        <Box
           sx={{
-            p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 3,
-            background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-            color: "white",
+            display: "grid",
+            gap: 3,
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
           }}
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm opacity-90">Resolved</p>
-              <p className="text-3xl font-bold mt-1">{stats.resolved}</p>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              bgcolor: "#E8F5E9",
+              color: colors.success,
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Resolved</p>
+                <p className="text-3xl font-bold mt-1">{stats.resolved}</p>
+              </div>
+              <CheckCircle2 size={40} className="opacity-75" />
             </div>
-            <CheckCircle2 size={40} className="opacity-75" />
-          </div>
-        </Paper>
+          </Paper>
 
-        <Paper
-          elevation={0}
-          sx={{
-            p: 3,
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 3,
-            background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-            color: "white",
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm opacity-90">Closed</p>
-              <p className="text-3xl font-bold mt-1">{stats.closed}</p>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              bgcolor: "#ECEFF1",
+              color: colors.textSecondary,
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Closed</p>
+                <p className="text-3xl font-bold mt-1">{stats.closed}</p>
+              </div>
+              <CheckCircle2 size={40} className="opacity-75" />
             </div>
-            <CheckCircle2 size={40} className="opacity-75" />
-          </div>
-        </Paper>
+          </Paper>
+        </Box>
       </Box>
 
       {/* Filters Section */}
@@ -296,9 +333,8 @@ const CustomerTickets = () => {
         sx={{
           p: 3,
           mb: 3,
-          border: "1px solid",
-          borderColor: "grey.200",
           borderRadius: 3,
+          bgcolor: colors.cardBg,
         }}
       >
         <div className="flex flex-col md:flex-row gap-3">
@@ -308,11 +344,11 @@ const CustomerTickets = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             variant="outlined"
             size="small"
-            sx={{ flex: 1 }}
+            
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search size={20} className="text-gray-400" />
+                  <Search size={20} style={{ color: colors.textSecondary }} />
                 </InputAdornment>
               ),
               endAdornment: searchTerm && (
@@ -323,14 +359,32 @@ const CustomerTickets = () => {
                 </InputAdornment>
               ),
             }}
+            sx={{
+              flex: 1,
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: colors.border,
+                },
+                "&:hover fieldset": {
+                  borderColor: colors.primary,
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: colors.primary,
+                },
+              },
+            }}
           />
 
           <div className="flex items-center gap-2">
-            <Filter size={20} className="text-gray-400" />
+            <Filter size={20} style={{ color: colors.textSecondary }} />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              style={{
+                borderColor: colors.border,
+                color: colors.textPrimary,
+              }}
+              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="all">All Status</option>
               <option value="open">Open</option>
@@ -342,7 +396,11 @@ const CustomerTickets = () => {
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              style={{
+                borderColor: colors.border,
+                color: colors.textPrimary,
+              }}
+              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="all">All Priority</option>
               <option value="high">High</option>
@@ -352,7 +410,7 @@ const CustomerTickets = () => {
           </div>
         </div>
 
-        <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+        <div className="mt-3 flex items-center gap-2 text-sm" style={{ color: colors.textSecondary }}>
           <span className="font-bold">{filteredTickets.length}</span>
           <span>tickets found</span>
           {(searchTerm || statusFilter !== "all" || priorityFilter !== "all") && (
@@ -363,7 +421,7 @@ const CustomerTickets = () => {
                 setStatusFilter("all");
                 setPriorityFilter("all");
               }}
-              sx={{ textTransform: "none", ml: 1 }}
+              sx={{ textTransform: "none", ml: 1, color: colors.primary }}
             >
               Clear filters
             </Button>
@@ -378,14 +436,15 @@ const CustomerTickets = () => {
           sx={{
             p: 8,
             textAlign: "center",
-            border: "1px solid",
-            borderColor: "grey.200",
             borderRadius: 3,
+            bgcolor: colors.cardBg,
           }}
         >
-          <TicketIcon size={64} className="mx-auto mb-4 text-gray-300" />
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">No tickets found</h3>
-          <p className="text-gray-500">
+          <TicketIcon size={64} className="mx-auto mb-4" style={{ color: colors.border }} />
+          <h3 className="text-xl font-semibold mb-2" style={{ color: colors.textPrimary }}>
+            No tickets found
+          </h3>
+          <p style={{ color: colors.textSecondary }}>
             {searchTerm || statusFilter !== "all" || priorityFilter !== "all"
               ? "Try adjusting your filters"
               : "This customer hasn't created any support tickets yet"}
@@ -403,13 +462,12 @@ const CustomerTickets = () => {
                 elevation={0}
                 sx={{
                   p: 3,
-                  border: "1px solid",
-                  borderColor: "grey.200",
                   borderRadius: 3,
+                  bgcolor: colors.cardBg,
                   transition: "all 0.2s",
                   "&:hover": {
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                    borderColor: "#4F46E5",
+                    boxShadow: "0 4px 20px rgba(94, 53, 177, 0.15)",
+                    transform: "translateY(-2px)",
                   },
                 }}
               >
@@ -417,14 +475,14 @@ const CustomerTickets = () => {
                   <div className="flex-1">
                     <div className="flex items-start gap-3 mb-3">
                       <div className="mt-1">
-                        <TicketIcon size={20} className="text-indigo-600" />
+                        <TicketIcon size={20} style={{ color: colors.primary }} />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                        <h3 style={{ color: colors.textPrimary }} className="text-lg font-semibold mb-2">
                           {ticket.subject}
                         </h3>
                         {ticket.description && (
-                          <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                          <p style={{ color: colors.textSecondary }} className="text-sm line-clamp-2 mb-3">
                             {ticket.description}
                           </p>
                         )}
@@ -451,7 +509,7 @@ const CustomerTickets = () => {
                               }}
                             />
                           )}
-                          <div className="flex items-center gap-1 text-xs text-gray-500 ml-2">
+                          <div className="flex items-center gap-1 text-xs ml-2" style={{ color: colors.textSecondary }}>
                             <Clock size={14} />
                             <span>{formatDate(ticket.createdAt)}</span>
                           </div>
@@ -468,8 +526,9 @@ const CustomerTickets = () => {
                       onClick={() => navigate(`/ticket/${ticket.id}`)}
                       sx={{
                         textTransform: "none",
-                        bgcolor: "#4F46E5",
-                        "&:hover": { bgcolor: "#4338CA" },
+                        bgcolor: colors.primary,
+                        "&:hover": { bgcolor: colors.primaryLight },
+                        boxShadow: "0 2px 8px rgba(94, 53, 177, 0.3)",
                       }}
                     >
                       View Details
@@ -492,7 +551,7 @@ const CustomerTickets = () => {
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
         <MenuItem
           onClick={() => {
-            if (selectedTicket) navigate(`/tickets/${selectedTicket.id}`);
+            if (selectedTicket) navigate(`/ticket/${selectedTicket.id}`);
             handleMenuClose();
           }}
         >

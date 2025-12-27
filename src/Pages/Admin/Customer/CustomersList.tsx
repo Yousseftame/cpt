@@ -17,7 +17,9 @@ import {
   Menu,
   MenuItem,
   InputAdornment,
-  Avatar
+  Avatar,
+  Paper,
+  Box
 } from "@mui/material";
 import {
   Edit,
@@ -37,10 +39,28 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  Users,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCustomer } from "../../../store/MasterContext/CustomerContext";
 import PagesLoader from "../../../components/shared/PagesLoader";
+
+// Purple & Blue Color Palette
+const colors = {
+  primary: "#5E35B1",
+  primaryLight: "#7E57C2",
+  secondary: "#1E88E5",
+  secondaryLight: "#42A5F5",
+  accent: "#FFB74D",
+  success: "#66BB6A",
+  error: "#EF5350",
+  lightBg: "#F5F5F5",
+  cardBg: "#FFFFFF",
+  textPrimary: "#263238",
+  textSecondary: "#607D8B",
+  border: "#E0E0E0",
+  lavender: "#EDE7F6",
+};
 
 export default function CustomersList() {
   const { customers, loading, fetchCustomers, deleteCustomer, updateCustomerStatus } = useCustomer();
@@ -160,82 +180,170 @@ export default function CustomersList() {
       case "pending":
         return <Clock size={14} />;
       default:
-        return <Clock size={14} />; // Default icon instead of null
+        return <Clock size={14} />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "active":
-        return { bgcolor: "#F6FFED", color: "#6CC464" };
+        return { bgcolor: "#E8F5E9", color: colors.success };
       case "inactive":
-        return { bgcolor: "#FFF1F0", color: "#FF5F5E" };
+        return { bgcolor: "#FFEBEE", color: colors.error };
       case "pending":
-        return { bgcolor: "#FEF3C7", color: "#F59E0B" };
+        return { bgcolor: "#FFF3E0", color: colors.accent };
       default:
-        return { bgcolor: "#F3F4F6", color: "#6B7280" };
+        return { bgcolor: "#ECEFF1", color: colors.textSecondary };
     }
   };
 
   if (loading && customers.length === 0) {
-    return (
-      <PagesLoader text="Loading customers..." />
-    );
+    return <PagesLoader text="Loading customers..." />;
   }
 
   return (
-    <div className="space-y-6">
+    <Box sx={{ maxWidth: 1900, mx: "auto", p: { xs: 2, md: 3 }, bgcolor: colors.lightBg, minHeight: "100vh" }}>
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-[#4F46E5]">Customers</h1>
-          <p className="text-gray-600 mt-1">Manage your customer database</p>
+      <Box sx={{ mb: 4 }}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 style={{ color: colors.primary }} className="text-3xl font-bold flex items-center gap-2">
+              <Users size={32} />
+              Customers
+            </h1>
+            <p style={{ color: colors.textSecondary }} className="mt-1">Manage your customer database</p>
+          </div>
+          <Button
+            variant="contained"
+            startIcon={<Plus size={20} />}
+            onClick={() => navigate("/customers")}
+            sx={{
+              bgcolor: colors.primary,
+              "&:hover": { bgcolor: colors.primaryLight },
+              textTransform: "none",
+              px: 3,
+              py: 1.5,
+              borderRadius: 2,
+              boxShadow: "0 4px 20px rgba(94, 53, 177, 0.3)",
+            }}
+          >
+            Add New Customer
+          </Button>
         </div>
-        <Button
-          variant="contained"
-          startIcon={<Plus size={20} />}
-          onClick={() => navigate("/customers")}
-          sx={{
-            bgcolor: "#4F46E5",
-            "&:hover": { bgcolor: "#4338CA" },
-            textTransform: "none",
-            px: 3,
-            py: 1.5,
-            borderRadius: 2,
-          }}
-        >
-          Add New Customer
-        </Button>
-      </div>
+      </Box>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl text-white">
-          <p className="text-sm opacity-90">Total Customers</p>
-          <p className="text-3xl font-bold mt-2">{customers.length}</p>
-        </div>
-        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl text-white">
-          <p className="text-sm opacity-90">Active</p>
-          <p className="text-3xl font-bold mt-2">
-            {customers.filter((c) => c.status === "active").length}
-          </p>
-        </div>
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl text-white">
-          <p className="text-sm opacity-90">Total Units</p>
-          <p className="text-3xl font-bold mt-2">
-            {customers.reduce((sum, c) => sum + (c.purchasedUnits?.length || 0), 0)}
-          </p>
-        </div>
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-xl text-white">
-          <p className="text-sm opacity-90">Total Tickets</p>
-          <p className="text-3xl font-bold mt-2">
-            {customers.reduce((sum, c) => sum + (c.ticketsCount || 0), 0)}
-          </p>
-        </div>
-      </div>
+      <Box sx={{ mb: 4 }}>
+        {/* First Row */}
+        <Box
+          sx={{
+            display: "grid",
+            gap: 3,
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
+            mb: 3,
+          }}
+        >
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryLight} 100%)`,
+              color: "white",
+              boxShadow: "0 4px 20px rgba(94, 53, 177, 0.3)",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Total Customers</p>
+                <p className="text-3xl font-bold mt-1">{customers.length}</p>
+              </div>
+              <Users size={40} className="opacity-75" />
+            </div>
+          </Paper>
+
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              background: `linear-gradient(135deg, ${colors.secondary} 0%, ${colors.secondaryLight} 100%)`,
+              color: "white",
+              boxShadow: "0 4px 20px rgba(30, 136, 229, 0.3)",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Active</p>
+                <p className="text-3xl font-bold mt-1">
+                  {customers.filter((c) => c.status === "active").length}
+                </p>
+              </div>
+              <CheckCircle2 size={40} className="opacity-75" />
+            </div>
+          </Paper>
+        </Box>
+
+        {/* Second Row */}
+        <Box
+          sx={{
+            display: "grid",
+            gap: 3,
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
+          }}
+        >
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              bgcolor: colors.lavender,
+              color: colors.primary,
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Total Units</p>
+                <p className="text-3xl font-bold mt-1">
+                  {customers.reduce((sum, c) => sum + (c.purchasedUnits?.length || 0), 0)}
+                </p>
+              </div>
+              <Package size={40} className="opacity-75" />
+            </div>
+          </Paper>
+
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              bgcolor: "#FFF3E0",
+              color: colors.accent,
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Total Tickets</p>
+                <p className="text-3xl font-bold mt-1">
+                  {customers.reduce((sum, c) => sum + (c.ticketsCount || 0), 0)}
+                </p>
+              </div>
+              <TicketIcon size={40} className="opacity-75" />
+            </div>
+          </Paper>
+        </Box>
+      </Box>
 
       {/* Filters Section */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          mb: 3,
+          borderRadius: 3,
+          bgcolor: colors.cardBg,
+        }}
+      >
         <div className="flex flex-col md:flex-row gap-4">
           <TextField
             placeholder="Search by name, email, or phone..."
@@ -243,11 +351,11 @@ export default function CustomersList() {
             onChange={(e) => setSearchTerm(e.target.value)}
             variant="outlined"
             size="small"
-            sx={{ flex: 1 }}
+            
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search size={20} className="text-gray-400" />
+                  <Search size={20} style={{ color: colors.textSecondary }} />
                 </InputAdornment>
               ),
               endAdornment: searchTerm && (
@@ -258,14 +366,32 @@ export default function CustomersList() {
                 </InputAdornment>
               ),
             }}
+            sx={{
+              flex: 1,
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: colors.border,
+                },
+                "&:hover fieldset": {
+                  borderColor: colors.primary,
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: colors.primary,
+                },
+              },
+            }}
           />
 
           <div className="flex items-center gap-2">
-            <Filter size={20} className="text-gray-400" />
+            <Filter size={20} style={{ color: colors.textSecondary }} />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              style={{
+                borderColor: colors.border,
+                color: colors.textPrimary,
+              }}
+              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="all">All Status</option>
               {statuses.map((status) => (
@@ -277,7 +403,7 @@ export default function CustomersList() {
           </div>
         </div>
 
-        <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
+        <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: colors.textSecondary }}>
           <span className="font-bold">{filteredCustomers.length}</span>
           <span>results found</span>
           {(searchTerm || statusFilter !== "all") && (
@@ -287,27 +413,34 @@ export default function CustomersList() {
                 setSearchTerm("");
                 setStatusFilter("all");
               }}
-              sx={{ textTransform: "none", ml: 1 }}
+              sx={{ textTransform: "none", ml: 1, color: colors.primary }}
             >
               Clear filters
             </Button>
           )}
         </div>
-      </div>
+      </Paper>
 
       {/* Table Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <Paper
+        elevation={0}
+        sx={{
+          borderRadius: 3,
+          bgcolor: colors.cardBg,
+          overflow: "hidden",
+        }}
+      >
         <div className="overflow-x-auto">
           <Table>
             <TableHead>
-              <TableRow sx={{ bgcolor: "#F9FAFB" }}>
-                <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Customer</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Contact</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Location</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Units</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Tickets</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#374151" }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#374151", textAlign: "center" }}>
+              <TableRow sx={{ bgcolor: colors.lavender }}>
+                <TableCell sx={{ fontWeight: 600, color: colors.primary }}>Customer</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: colors.primary }}>Contact</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: colors.primary }}>Location</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: colors.primary }}>Units</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: colors.primary }}>Tickets</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: colors.primary }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: colors.primary, textAlign: "center" }}>
                   Actions
                 </TableCell>
               </TableRow>
@@ -317,7 +450,7 @@ export default function CustomersList() {
               {paginatedCustomers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
-                    <div className="text-gray-400">
+                    <div style={{ color: colors.textSecondary }}>
                       <Search size={48} className="mx-auto mb-2 opacity-50" />
                       <p className="text-lg">No customers found</p>
                       <p className="text-sm">Try adjusting your filters</p>
@@ -332,7 +465,7 @@ export default function CustomersList() {
                     <TableRow
                       key={customer.id}
                       sx={{
-                        "&:hover": { bgcolor: "#F9FAFB" },
+                        "&:hover": { bgcolor: colors.lavender },
                         transition: "background-color 0.2s",
                       }}
                     >
@@ -340,7 +473,7 @@ export default function CustomersList() {
                         <div className="flex items-center gap-3">
                           <Avatar
                             sx={{
-                              bgcolor: "#4F46E5",
+                              bgcolor: colors.primary,
                               width: 40,
                               height: 40,
                               fontSize: "1rem",
@@ -349,8 +482,10 @@ export default function CustomersList() {
                             {customer.name.charAt(0).toUpperCase()}
                           </Avatar>
                           <div>
-                            <p className="font-medium text-gray-800">{customer.name}</p>
-                            <p className="text-sm text-gray-500 flex items-center gap-1">
+                            <p className="font-medium" style={{ color: colors.textPrimary }}>
+                              {customer.name}
+                            </p>
+                            <p className="text-sm flex items-center gap-1" style={{ color: colors.textSecondary }}>
                               <Mail size={14} />
                               {customer.email}
                             </p>
@@ -358,14 +493,14 @@ export default function CustomersList() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 text-gray-700">
-                          <Phone size={16} className="text-gray-400" />
+                        <div className="flex items-center gap-1" style={{ color: colors.textPrimary }}>
+                          <Phone size={16} style={{ color: colors.textSecondary }} />
                           <span>{customer.phone}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 text-gray-700">
-                          <MapPin size={16} className="text-gray-400" />
+                        <div className="flex items-center gap-1" style={{ color: colors.textPrimary }}>
+                          <MapPin size={16} style={{ color: colors.textSecondary }} />
                           <span className="max-w-[200px] truncate">{customer.address}</span>
                         </div>
                       </TableCell>
@@ -374,7 +509,7 @@ export default function CustomersList() {
                           icon={<Package size={14} />}
                           label={customer.purchasedUnits?.length || 0}
                           size="small"
-                          sx={{ bgcolor: "#EEF2FF", color: "#4F46E5" }}
+                          sx={{ bgcolor: colors.lavender, color: colors.primary }}
                         />
                       </TableCell>
                       <TableCell>
@@ -382,7 +517,7 @@ export default function CustomersList() {
                           icon={<TicketIcon size={14} />}
                           label={customer.ticketsCount || 0}
                           size="small"
-                          sx={{ bgcolor: "#FFF1F0", color: "#FF5F5E" }}
+                          sx={{ bgcolor: "#E3F2FD", color: colors.secondary }}
                         />
                       </TableCell>
                       <TableCell>
@@ -426,7 +561,7 @@ export default function CustomersList() {
           onRowsPerPageChange={handleChangeRowsPerPage}
           rowsPerPageOptions={[5, 10, 25, 50]}
         />
-      </div>
+      </Paper>
 
       {/* Actions Menu */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
@@ -459,7 +594,7 @@ export default function CustomersList() {
         </MenuItem>
         <MenuItem
           onClick={() => selectedCustomer && openDeleteDialog(selectedCustomer)}
-          sx={{ color: "#DC2626" }}
+          sx={{ color: colors.error }}
         >
           <Trash2 size={16} className="mr-2" />
           Delete
@@ -476,57 +611,73 @@ export default function CustomersList() {
           onClick={() => handleStatusChange('active')}
           disabled={customerForStatusChange?.status === 'active'}
         >
-          <CheckCircle2 size={16} className="mr-2 text-green-600" />
+          <CheckCircle2 size={16} className="mr-2" style={{ color: colors.success }} />
           Active
         </MenuItem>
         <MenuItem
           onClick={() => handleStatusChange('inactive')}
           disabled={customerForStatusChange?.status === 'inactive'}
         >
-          <XCircle size={16} className="mr-2 text-red-600" />
+          <XCircle size={16} className="mr-2" style={{ color: colors.error }} />
           Inactive
         </MenuItem>
         <MenuItem
           onClick={() => handleStatusChange('pending')}
           disabled={customerForStatusChange?.status === 'pending'}
         >
-          <Clock size={16} className="mr-2 text-yellow-600" />
+          <Clock size={16} className="mr-2" style={{ color: colors.accent }} />
           Pending
         </MenuItem>
       </Menu>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog} onClose={() => setDeleteDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle className="flex items-center gap-3 text-red-600">
+        <DialogTitle className="flex items-center gap-3" style={{ color: colors.error }}>
           <AlertTriangle size={24} />
           Confirm Deletion
         </DialogTitle>
         <DialogContent>
-          <p className="text-gray-700 mb-4">
+          <p style={{ color: colors.textPrimary }} className="mb-4">
             Are you sure you want to delete <strong>{customerToDelete?.name}</strong>?
           </p>
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-sm text-red-800">
+          <div style={{ 
+            backgroundColor: "#FFEBEE", 
+            borderColor: colors.error,
+            borderWidth: 1,
+            borderStyle: "solid"
+          }} className="rounded-lg p-4">
+            <p className="text-sm" style={{ color: colors.error }}>
               <strong>Warning:</strong> This action cannot be undone. All customer data including
               purchased units will be permanently deleted.
             </p>
           </div>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setDeleteDialog(false)} variant="outlined" sx={{ textTransform: "none" }}>
+          <Button 
+            onClick={() => setDeleteDialog(false)} 
+            variant="outlined" 
+            sx={{ 
+              textTransform: "none",
+              borderColor: colors.border,
+              color: colors.textPrimary,
+            }}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleDelete}
             variant="contained"
-            color="error"
             startIcon={<Trash2 size={16} />}
-            sx={{ textTransform: "none" }}
+            sx={{ 
+              textTransform: "none",
+              bgcolor: colors.error,
+              "&:hover": { bgcolor: "#D32F2F" },
+            }}
           >
             Delete Customer
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </Box>
   );
 }
