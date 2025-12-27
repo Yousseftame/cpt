@@ -4,7 +4,6 @@ import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from '../../../service/firebase';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import AuthCardWrapper from '../../../components/shared/AuthCardWrapper';
 import ErrorAlert from '../../../components/shared/ErrorAlert';
 import AuthInput from '../../../components/shared/AuthInput';
 import AuthButton from '../../../components/shared/AuthButton';
@@ -23,25 +22,14 @@ const ForgetPassword = () => {
 
     try {
       await sendPasswordResetEmail(auth, email);
-
-      toast.success("Password reset email sent!", {
-        style: {
-          borderRadius: "10px",
-          background: "#333",
-          color: "#fff",
-        },
-      });
-
+      toast.success("Password reset email sent!");
       setEmailSent(true);
 
-      // Navigate to login after 3 seconds
       setTimeout(() => {
         navigate("/login");
       }, 3000);
 
     } catch (err: any) {
-      console.error('Reset password error:', err);
-      
       if (err.code === 'auth/user-not-found') {
         setError("No account found with this email address.");
       } else if (err.code === 'auth/invalid-email') {
@@ -57,11 +45,20 @@ const ForgetPassword = () => {
   };
 
   return (
-    <AuthCardWrapper
-      title="Forgot Password?"
-      subtitle="Enter your email to reset your password"
-      icon={<KeyRound className="text-white" size={32} />}
-    >
+    <div>
+      {/* Logo */}
+      <div className="mb-8">
+        {/* <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl mb-4">
+          <KeyRound className="text-white" size={24} />
+        </div> */}
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Forgot Password?
+        </h1>
+        <p className="text-gray-600">
+          Enter your email to reset your password.
+        </p>
+      </div>
+
       <ErrorAlert message={error} onClose={() => setError('')} />
 
       {emailSent && (
@@ -70,12 +67,12 @@ const ForgetPassword = () => {
             ✓ Reset email sent successfully!
           </p>
           <p className="text-xs text-green-600 mt-1">
-            Please check your inbox and follow the instructions to reset your password.
+            Please check your inbox and follow the instructions.
           </p>
         </div>
       )}
 
-      <form onSubmit={handleResetPassword} className="space-y-6">
+      <form onSubmit={handleResetPassword} className="space-y-5">
         <AuthInput
           label="Email Address"
           icon={Mail}
@@ -98,24 +95,18 @@ const ForgetPassword = () => {
         </AuthButton>
       </form>
 
-      <div className="relative my-8">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-300"></div>
-        </div>
-      </div>
-
-      <p className="text-center text-sm text-gray-600 mt-12">
+      <p className="text-center text-sm text-gray-600 mt-8">
         Remember your password?{' '}
         <button
           onClick={() => navigate('/login')}
           type="button"
-          className="text-indigo-600 hover:text-indigo-800 font-semibold transition-colors disabled:opacity-50"
+          className="text-purple-600 hover:text-purple-800 font-semibold transition-colors underline"
           disabled={loading}
         >
           Back to Login
         </button>
       </p>
-    </AuthCardWrapper>
+    </div>
   );
 };
 

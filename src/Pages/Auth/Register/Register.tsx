@@ -4,7 +4,6 @@ import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/
 import { auth } from '../../../service/firebase';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import AuthCardWrapper from '../../../components/shared/AuthCardWrapper';
 import ErrorAlert from '../../../components/shared/ErrorAlert';
 import AuthInput from '../../../components/shared/AuthInput';
 import AuthButton from '../../../components/shared/AuthButton';
@@ -25,14 +24,14 @@ const Register = () => {
     setError('');
 
     if (!name.trim()) {
-  setError('Full name is required');
-  return;
-}
+      setError('Full name is required');
+      return;
+    }
 
- if (name.trim().length < 3) {
-  setError('Full name must be at least 3 characters');
-  return;
-}
+    if (name.trim().length < 3) {
+      setError('Full name must be at least 3 characters');
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
@@ -49,32 +48,19 @@ const Register = () => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      console.log('User registered:', user);
 
-      // Save user in Firestore
       await setDoc(doc(db, 'admins', user.uid), {
         uid: user.uid,
         name: name,
         email: user.email,
-        role: 'admin',   
+        role: 'admin',
         createdAt: serverTimestamp(),
       });
 
-      // Send verification email
       await sendEmailVerification(user);
 
-      toast.success("Verification email sent! Please check your inbox.", {
-        style: {
-          borderRadius: '10px',
-          background: '#333',
-          color: '#fff',
-        },
-      });
-
-      // Store timestamp for cooldown period
+      toast.success("Verification email sent! Please check your inbox.");
       sessionStorage.setItem('emailSentAt', Date.now().toString());
-
-      // Navigate to verify account page
       navigate('/verify-account');
 
     } catch (err: any) {
@@ -93,15 +79,23 @@ const Register = () => {
   };
 
   return (
-    <form onSubmit={handleRegister}   >
-    <AuthCardWrapper
-      title="Create Account"
-      subtitle="Sign up to get started"
-      icon={<User className="text-white" size={32} />}
-    >
+    <div>
+      {/* Logo */}
+      <div className="mb-8">
+        {/* <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl mb-4">
+          <User className="text-white" size={24} />
+        </div> */}
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Create Account
+        </h1>
+        <p className="text-gray-600">
+          Sign up to get started with your account.
+        </p>
+      </div>
+
       <ErrorAlert message={error} onClose={() => setError('')} />
 
-      <div className="space-y-6">
+      <form onSubmit={handleRegister} className="space-y-5">
         <AuthInput
           label="Full Name"
           icon={User}
@@ -114,7 +108,7 @@ const Register = () => {
         />
 
         <AuthInput
-          label="Email Address"
+          label="Email"
           icon={Mail}
           type="email"
           value={email}
@@ -150,34 +144,26 @@ const Register = () => {
 
         <AuthButton
           type="submit"
-          
           loading={loading}
           loadingText="Creating account..."
           icon={<ArrowRight size={20} />}
         >
           Sign Up
         </AuthButton>
-      </div>
+      </form>
 
-      <div className="relative my-8">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-300"></div>
-        </div>
-      </div>
-
-      <p className="text-center text-sm text-gray-600 mt-12">
+      <p className="text-center text-sm text-gray-600 mt-8">
         Already have an account?{' '}
         <button
           onClick={() => navigate('/login')}
           type="button"
-          className="text-indigo-600 hover:text-indigo-800 font-semibold transition-colors disabled:opacity-50"
+          className="text-purple-600 hover:text-purple-800 font-semibold transition-colors underline"
           disabled={loading}
         >
           Sign in
         </button>
       </p>
-    </AuthCardWrapper>
-    </form>
+    </div>
   );
 };
 

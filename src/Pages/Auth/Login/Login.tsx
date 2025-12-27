@@ -4,13 +4,11 @@ import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth, db } from '../../../service/firebase';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import AuthCardWrapper from '../../../components/shared/AuthCardWrapper';
 import ErrorAlert from '../../../components/shared/ErrorAlert';
 import AuthInput from '../../../components/shared/AuthInput';
 import AuthButton from '../../../components/shared/AuthButton';
 import { doc, getDoc } from 'firebase/firestore';
 import PagesLoader from '../../../components/shared/PagesLoader';
-
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -18,6 +16,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -27,59 +26,27 @@ const Login = () => {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-
-      // CRITICAL: Reload user to get the latest emailVerified state from Firebase server
       await userCredential.user.reload();
-
-      // Get the fresh user object after reload
       const currentUser = auth.currentUser;
 
-      console.log('User logged in:', currentUser);
-      console.log('Email verified:', currentUser?.emailVerified);
-
-      
-
-
-      // جلب الـ role من Firestore
       const docRef = doc(db, "admins", userCredential.user.uid);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        console.log("Role after login:", docSnap.data().role);
-
-        // On login ،  store role  in localStorage
         localStorage.setItem('userRole', docSnap.data().role);
-        localStorage.setItem('userName', docSnap.data().name || '');  ;
-
-
+        localStorage.setItem('userName', docSnap.data().name || '');
       }
 
       if (!currentUser?.emailVerified) {
         setError('Please verify your email before logging in.');
         navigate('/verify-account');
-        toast.error('Please verify your email first.', {
-          style: {
-            borderRadius: '10px',
-            background: '#333',
-            color: '#fff',
-          },
-        });
+        toast.error('Please verify your email first.');
         return;
       }
 
-      // Success - navigate to dashboard
-      toast.success('Login successful!', {
-        style: {
-          borderRadius: '10px',
-          background: '#333',
-          color: '#fff',
-        },
-      });
-
+      toast.success('Login successful!');
       navigate('/dashboard');
 
     } catch (err: any) {
-      console.error('Login error:', err);
-
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
         setError('Invalid email or password. Please try again.');
       } else if (err.code === 'auth/user-not-found') {
@@ -97,43 +64,44 @@ const Login = () => {
   };
 
   useEffect(() => {
-    // Sign out any authenticated user when landing on login page
-    // This ensures users ALWAYS see the login form and must enter credentials
     const signOutUser = async () => {
       if (auth.currentUser) {
         await signOut(auth);
       }
       setCheckingAuth(false);
     };
-
     signOutUser();
   }, []);
 
   if (checkingAuth) {
-    return (
-      <PagesLoader text="Preparing login page..." />
-    );
+    return <PagesLoader text="Preparing login page..." />;
   }
 
   return (
+    <div>
+      {/* Logo */}
+      <div className="mb-8">
+        {/* <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl mb-4">
+          <Lock className="text-white" size={24} />
+        </div> */}
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Welcome back!
+        </h1>
+        <p className="text-gray-600">
+          Enter to get unlimited access to data & information.
+        </p>
+      </div>
 
-    <AuthCardWrapper
-      title="Welcome Back"
-      subtitle="Sign in to continue to your account"
-      icon={<Lock className="text-white" size={32} />}
-    >
       <ErrorAlert message={error} onClose={() => setError('')} />
 
-
-
-      <form onSubmit={handleLogin} className="space-y-6">
+      <form onSubmit={handleLogin} className="space-y-5">
         <AuthInput
-          label="Email Address"
+          label="Email"
           icon={Mail}
           type="email"
           value={email}
           onChange={(e: any) => setEmail(e.target.value)}
-          placeholder="Enter your email"
+          placeholder="Enter your mail address"
           required
           disabled={loading}
         />
@@ -144,20 +112,30 @@ const Login = () => {
           type="password"
           value={password}
           onChange={(e: any) => setPassword(e.target.value)}
-          placeholder="Enter your password"
+          placeholder="Enter password"
           required
           disabled={loading}
           showPasswordToggle
         />
 
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+            />
+            <span className="text-sm text-gray-700">Remember me</span>
+          </label>
+
           <button
             onClick={() => navigate('/forget-password')}
             type="button"
-            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+            className="text-sm text-purple-600 hover:text-purple-800 font-medium transition-colors"
             disabled={loading}
           >
-            Forgot Password?
+            Forgot your password?
           </button>
         </div>
 
@@ -167,28 +145,22 @@ const Login = () => {
           loadingText="Signing in..."
           icon={<ArrowRight size={20} />}
         >
-          Sign In
+          Log In
         </AuthButton>
       </form>
 
-      <div className="relative my-8">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-300"></div>
-        </div>
-      </div>
-
-      <p className="text-center text-sm text-gray-600 mt-12">
+      <p className="text-center text-sm text-gray-600 mt-8">
         Don't have an account?{' '}
         <button
           onClick={() => navigate('/register')}
           type="button"
-          className="text-indigo-600 hover:text-indigo-800 font-semibold transition-colors disabled:opacity-50"
+          className="text-purple-600 hover:text-purple-800 font-semibold transition-colors underline"
           disabled={loading}
         >
-          Sign up
+          Register here
         </button>
       </p>
-    </AuthCardWrapper>
+    </div>
   );
 };
 
