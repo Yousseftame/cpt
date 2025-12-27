@@ -37,10 +37,7 @@ const Login = () => {
       console.log('User logged in:', currentUser);
       console.log('Email verified:', currentUser?.emailVerified);
 
-      // On login
-// localStorage.setItem('userRole', 'admin'); // or 'admin'
-// localStorage.setItem('userName', currentUser?.name);
-
+      
 
 
       // جلب الـ role من Firestore
@@ -48,6 +45,12 @@ const Login = () => {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         console.log("Role after login:", docSnap.data().role);
+
+        // On login ،  store role  in localStorage
+        localStorage.setItem('userRole', docSnap.data().role);
+        localStorage.setItem('userName', docSnap.data().name || '');  ;
+
+
       }
 
       if (!currentUser?.emailVerified) {

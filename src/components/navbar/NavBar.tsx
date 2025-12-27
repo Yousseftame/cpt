@@ -9,6 +9,8 @@ interface NavBarProps {
 export default function NavBar({ isOpen, setIsOpen }: NavBarProps) {
   const { user } = useAuth();
 
+  
+
   return (
     <header className={`fixed top-0 right-0 h-16 bg-white border-b border-gray-200 z-30 transition-all duration-300 ${
       isOpen ? 'left-64' : 'left-0 lg:left-20'
@@ -48,7 +50,7 @@ export default function NavBar({ isOpen, setIsOpen }: NavBarProps) {
               <p className="text-sm font-semibold text-gray-700">
                 {user?.email?.split('@')[0] || 'User'}
               </p>
-              <p className="text-xs text-gray-500"> super admin</p>
+              <p className="text-xs text-gray-500"> { localStorage.getItem('userRole') || 'User' }</p>
             </div>
             <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
               {user?.email?.[0].toUpperCase() || <User size={20} />}
