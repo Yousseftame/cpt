@@ -1,3 +1,5 @@
+// src/store/MasterContext/TicketContext.tsx
+
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import {
   collection,
@@ -17,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '../../service/firebase';
 import toast from 'react-hot-toast';
+import { auditLogger } from '../../service/auditLogger';
 
 export interface TicketMessage {
   message: string;
@@ -46,6 +49,8 @@ export interface Ticket {
   assignedAdminId?: string;
   assignedAdminName?: string;
   createdAt: any;
+  updatedAt?: any;
+  updatedBy?: string;
   assignedAt?: any;
   closedAt?: any;
   reopenedAt?: any;
@@ -115,10 +120,8 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
         snapshot.docs.map(async (docSnap) => {
           const data = docSnap.data();
 
-          // Fetch customer info
           const customerInfo = await fetchCustomerInfo(data.customerId);
 
-          // Fetch admin info if assigned
           let adminName = undefined;
           if (data.assignedAdminId) {
             adminName = await fetchAdminInfo(data.assignedAdminId);
@@ -153,10 +156,8 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
 
-          // Fetch customer info
           const customerInfo = await fetchCustomerInfo(data.customerId);
 
-          // Fetch admin info if assigned
           let adminName = undefined;
           if (data.assignedAdminId) {
             adminName = await fetchAdminInfo(data.assignedAdminId);
@@ -184,10 +185,17 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
   const updateTicketStatus = useCallback(
     async (id: string, status: Ticket['status']) => {
       try {
+        const adminUid = auth.currentUser?.uid;
+        if (!adminUid) throw new Error('Not authenticated');
+
+        // Get before state
+        const before = await getTicketById(id);
+
         const docRef = doc(db, 'tickets', id);
         const updateData: any = {
           status,
           updatedAt: serverTimestamp(),
+          updatedBy: adminUid,
         };
 
         if (status === 'closed') {
@@ -197,6 +205,28 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
         }
 
         await updateDoc(docRef, updateData);
+
+        // Get after state
+        const after = await getTicketById(id);
+
+        // 🔥 LOG AUDIT: Status Changed
+        if (before && after) {
+          await auditLogger.log({
+            action: "CHANGED_TICKET_STATUS",
+            entityType: "ticket",
+            entityId: id,
+            entityName: after.subject,
+            before: { 
+              status: before.status,
+              assignedAdminId: before.assignedAdminId 
+            },
+            after: { 
+              status: after.status,
+              assignedAdminId: after.assignedAdminId 
+            },
+          });
+        }
+
         toast.success('Ticket status updated successfully!');
         await fetchTickets();
       } catch (error) {
@@ -205,17 +235,40 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
     },
-    [fetchTickets]
+    [fetchTickets, getTicketById]
   );
 
   const updateTicketPriority = useCallback(
     async (id: string, priority: Ticket['priority']) => {
       try {
+        const adminUid = auth.currentUser?.uid;
+        if (!adminUid) throw new Error('Not authenticated');
+
+        // Get before state
+        const before = await getTicketById(id);
+
         const docRef = doc(db, 'tickets', id);
         await updateDoc(docRef, {
           priority,
           updatedAt: serverTimestamp(),
+          updatedBy: adminUid,
         });
+
+        // Get after state
+        const after = await getTicketById(id);
+
+        // 🔥 LOG AUDIT: Priority Changed
+        if (before && after) {
+          await auditLogger.log({
+            action: "CHANGED_TICKET_PRIORITY",
+            entityType: "ticket",
+            entityId: id,
+            entityName: after.subject,
+            before: { priority: before.priority },
+            after: { priority: after.priority },
+          });
+        }
+
         toast.success('Ticket priority updated successfully!');
         await fetchTickets();
       } catch (error) {
@@ -224,20 +277,49 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
     },
-    [fetchTickets]
+    [fetchTickets, getTicketById]
   );
 
   const assignTicket = useCallback(
     async (id: string, adminId: string, adminName: string) => {
       try {
+        const adminUid = auth.currentUser?.uid;
+        if (!adminUid) throw new Error('Not authenticated');
+
+        // Get before state
+        const before = await getTicketById(id);
+
         const docRef = doc(db, 'tickets', id);
         await updateDoc(docRef, {
           assignedAdminId: adminId,
           assignedAdminName: adminName,
           assignedAt: serverTimestamp(),
-          status: 'in_progress', // Auto-update status when assigning
+          status: 'in_progress',
           updatedAt: serverTimestamp(),
+          updatedBy: adminUid,
         });
+
+        // Get after state
+        const after = await getTicketById(id);
+
+        // 🔥 LOG AUDIT: Ticket Assigned
+        if (before && after) {
+          await auditLogger.log({
+            action: "ASSIGNED_TICKET",
+            entityType: "ticket",
+            entityId: id,
+            entityName: after.subject,
+            before: { 
+              assignedAdminId: before.assignedAdminId,
+              assignedAdminName: before.assignedAdminName 
+            },
+            after: { 
+              assignedAdminId: after.assignedAdminId,
+              assignedAdminName: after.assignedAdminName 
+            },
+          });
+        }
+
         toast.success('Ticket assigned successfully!');
         await fetchTickets();
       } catch (error) {
@@ -246,12 +328,15 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
     },
-    [fetchTickets]
+    [fetchTickets, getTicketById]
   );
 
   const addMessage = useCallback(
     async (ticketId: string, message: Omit<TicketMessage, 'createdAt'>) => {
       try {
+        const adminUid = auth.currentUser?.uid;
+        if (!adminUid) throw new Error('Not authenticated');
+
         const docRef = doc(db, 'tickets', ticketId);
         await updateDoc(docRef, {
           messages: arrayUnion({
@@ -259,7 +344,23 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
             createdAt: serverTimestamp(),
           }),
           updatedAt: serverTimestamp(),
+          updatedBy: adminUid,
         });
+
+        // Get ticket info
+        const ticket = await getTicketById(ticketId);
+
+        // 🔥 LOG AUDIT: Message Added
+        if (ticket) {
+          await auditLogger.log({
+            action: "ADDED_TICKET_MESSAGE",
+            entityType: "ticket",
+            entityId: ticketId,
+            entityName: ticket.subject,
+            after: { message: message.message.substring(0, 50) + "..." },
+          });
+        }
+
         toast.success('Message sent successfully!');
         await fetchTickets();
       } catch (error) {
@@ -268,15 +369,17 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
     },
-    [fetchTickets]
+    [fetchTickets, getTicketById]
   );
 
   const addInternalNote = useCallback(
     async (ticketId: string, note: Omit<InternalNote, 'createdAt'>) => {
       try {
+        const adminUid = auth.currentUser?.uid;
+        if (!adminUid) throw new Error('Not authenticated');
+
         const docRef = doc(db, 'tickets', ticketId);
         
-        // Get current ticket data
         const docSnap = await getDoc(docRef);
         if (!docSnap.exists()) {
           throw new Error('Ticket not found');
@@ -285,17 +388,30 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
         const currentData = docSnap.data();
         const currentNotes = currentData.internalNotes || [];
         
-        // Create new note with timestamp
         const newNoteWithTimestamp = {
           ...note,
           createdAt: Timestamp.now(),
         };
         
-        // Update with new array
         await updateDoc(docRef, {
           internalNotes: [...currentNotes, newNoteWithTimestamp],
           updatedAt: serverTimestamp(),
+          updatedBy: adminUid,
         });
+
+        // Get ticket info
+        const ticket = await getTicketById(ticketId);
+
+        // 🔥 LOG AUDIT: Note Added
+        if (ticket) {
+          await auditLogger.log({
+            action: "ADDED_TICKET_NOTE",
+            entityType: "ticket",
+            entityId: ticketId,
+            entityName: ticket.subject,
+            after: { note: note.note.substring(0, 50) + "..." },
+          });
+        }
         
         toast.success('Internal note added successfully!');
         await fetchTickets();
@@ -305,21 +421,35 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
     },
-    [fetchTickets]
+    [fetchTickets, getTicketById]
   );
 
   const removeInternalNote = useCallback(
     async (ticketId: string, noteIndex: number) => {
       try {
+        const adminUid = auth.currentUser?.uid;
+        if (!adminUid) throw new Error('Not authenticated');
+
         const ticket = await getTicketById(ticketId);
         if (!ticket) throw new Error('Ticket not found');
 
+        const removedNote = ticket.internalNotes[noteIndex];
         const updatedNotes = ticket.internalNotes.filter((_, index) => index !== noteIndex);
 
         const docRef = doc(db, 'tickets', ticketId);
         await updateDoc(docRef, {
           internalNotes: updatedNotes,
           updatedAt: serverTimestamp(),
+          updatedBy: adminUid,
+        });
+
+        // 🔥 LOG AUDIT: Note Removed
+        await auditLogger.log({
+          action: "REMOVED_TICKET_NOTE",
+          entityType: "ticket",
+          entityId: ticketId,
+          entityName: ticket.subject,
+          before: { note: removedNote?.note?.substring(0, 50) + "..." },
         });
 
         toast.success('Internal note removed successfully!');
@@ -336,12 +466,33 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
   const reopenTicket = useCallback(
     async (id: string) => {
       try {
+        const adminUid = auth.currentUser?.uid;
+        if (!adminUid) throw new Error('Not authenticated');
+
+        const before = await getTicketById(id);
+
         const docRef = doc(db, 'tickets', id);
         await updateDoc(docRef, {
           status: 'reopened',
           reopenedAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
+          updatedBy: adminUid,
         });
+
+        const after = await getTicketById(id);
+
+        // 🔥 LOG AUDIT: Ticket Reopened
+        if (before && after) {
+          await auditLogger.log({
+            action: "REOPENED_TICKET",
+            entityType: "ticket",
+            entityId: id,
+            entityName: after.subject,
+            before: { status: before.status },
+            after: { status: after.status },
+          });
+        }
+
         toast.success('Ticket reopened successfully!');
         await fetchTickets();
       } catch (error) {
@@ -350,18 +501,39 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
     },
-    [fetchTickets]
+    [fetchTickets, getTicketById]
   );
 
   const closeTicket = useCallback(
     async (id: string) => {
       try {
+        const adminUid = auth.currentUser?.uid;
+        if (!adminUid) throw new Error('Not authenticated');
+
+        const before = await getTicketById(id);
+
         const docRef = doc(db, 'tickets', id);
         await updateDoc(docRef, {
           status: 'closed',
           closedAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
+          updatedBy: adminUid,
         });
+
+        const after = await getTicketById(id);
+
+        // 🔥 LOG AUDIT: Ticket Closed
+        if (before && after) {
+          await auditLogger.log({
+            action: "CLOSED_TICKET",
+            entityType: "ticket",
+            entityId: id,
+            entityName: after.subject,
+            before: { status: before.status },
+            after: { status: after.status },
+          });
+        }
+
         toast.success('Ticket closed successfully!');
         await fetchTickets();
       } catch (error) {
@@ -370,7 +542,7 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
     },
-    [fetchTickets]
+    [fetchTickets, getTicketById]
   );
 
   const value = {

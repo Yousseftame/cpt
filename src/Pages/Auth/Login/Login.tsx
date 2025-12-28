@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Lock, ArrowRight, EyeClosed } from 'lucide-react';
+import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth, db } from '../../../service/firebase';
 import { useNavigate } from 'react-router-dom';
@@ -16,7 +16,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [rememberMe, setRememberMe] = useState(false);
+  // const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {

@@ -27,6 +27,7 @@ import EditCustomer from "./Pages/Admin/Customer/EditCustomer";
 import TicketDetails from "./Pages/Admin/Ticket/TicketDetails";
 import TicketList from "./Pages/Admin/Ticket/TicketList";
 
+
 function App() {
   const routes = createBrowserRouter([
     {
@@ -99,6 +100,7 @@ function App() {
             </ProtectedRoute>
           )
         },
+      
       ],
     },
   ]);

@@ -1,12 +1,14 @@
+// src/Pages/Admin/Model/AddGenerator.tsx
+
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import { TextField, Button, Paper,  Divider, Box } from "@mui/material";
+import { TextField, Button, Paper, Divider, Box } from "@mui/material";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../../../service/firebase";
+import { db, auth } from "../../../service/firebase";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { ArrowLeft, Save, Zap } from "lucide-react";
 import Grid from '@mui/material/Grid';
-
+import { auditLogger } from "../../../service/auditLogger";
 
 interface Specifications {
   phase: string;
@@ -106,6 +108,9 @@ export default function AddGenerator() {
     setLoading(true);
 
     try {
+      const adminUid = auth.currentUser?.uid;
+      if (!adminUid) throw new Error('Not authenticated');
+
       const docData = {
         name: formData.name.trim(),
         sku: formData.sku.trim(),
@@ -120,6 +125,7 @@ export default function AddGenerator() {
         galleryImages: [],
         troubleshootingPDFs: [],
         createdAt: serverTimestamp(),
+        createdBy: adminUid,
         updatedAt: serverTimestamp(),
       };
 
@@ -127,9 +133,17 @@ export default function AddGenerator() {
       
       console.log("Document written with ID: ", docRef.id);
 
+      // 🔥 LOG AUDIT: Generator Model Created
+      await auditLogger.log({
+        action: "CREATED_GENERATOR_MODEL",
+        entityType: "generator",
+        entityId: docRef.id,
+        entityName: formData.name.trim(),
+        after: docData,
+      });
+
       toast.success("Generator model added successfully!");
       
-      // Small delay to ensure Firestore write completes
       setTimeout(() => {
         navigate("/models");
       }, 500);
@@ -144,7 +158,6 @@ export default function AddGenerator() {
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: { xs: 2, md: 3 } }}>
-      {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Button
           variant="outlined"
@@ -168,7 +181,6 @@ export default function AddGenerator() {
       <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, border: '1px solid', borderColor: 'grey.200', borderRadius: 3 }}>
         <form onSubmit={handleSubmit}>
           
-          {/* Basic Information Section */}
           <Box sx={{ mb: 5 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
               <Zap className="text-indigo-600" size={24} />
@@ -236,16 +248,12 @@ export default function AddGenerator() {
                   error={!!errors.category}
                   helperText={errors.category}
                   required
-                  SelectProps={{
-                    native: true,
-                  }}
+                  SelectProps={{ native: true }}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 >
                   <option value="">Select Category</option>
                   {categories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
+                    <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </TextField>
               </Grid>
@@ -283,7 +291,6 @@ export default function AddGenerator() {
             </Grid>
           </Box>
 
-          {/* Specifications Section */}
           <Box sx={{ mb: 4 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
               <Zap className="text-indigo-600" size={24} />
@@ -303,16 +310,12 @@ export default function AddGenerator() {
                   error={!!errors.phase}
                   helperText={errors.phase}
                   required
-                  SelectProps={{
-                    native: true,
-                  }}
+                  SelectProps={{ native: true }}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 >
                   <option value="">Select Phase</option>
                   {phases.map((phase) => (
-                    <option key={phase} value={phase}>
-                      {phase}
-                    </option>
+                    <option key={phase} value={phase}>{phase}</option>
                   ))}
                 </TextField>
               </Grid>
@@ -328,34 +331,24 @@ export default function AddGenerator() {
                   error={!!errors.voltage}
                   helperText={errors.voltage}
                   required
-                  SelectProps={{
-                    native: true,
-                  }}
+                  SelectProps={{ native: true }}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 >
                   <option value="">Select Voltage</option>
                   {voltages.map((voltage) => (
-                    <option key={voltage} value={voltage}>
-                      {voltage}
-                    </option>
+                    <option key={voltage} value={voltage}>{voltage}</option>
                   ))}
                 </TextField>
               </Grid>
             </Grid>
           </Box>
 
-          {/* Action Buttons */}
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', pt: 2 }}>
             <Button
               variant="outlined"
               onClick={() => navigate("/models")}
               disabled={loading}
-              sx={{ 
-                textTransform: 'none', 
-                px: 4, 
-                py: 1.5,
-                borderRadius: 2
-              }}
+              sx={{ textTransform: 'none', px: 4, py: 1.5, borderRadius: 2 }}
             >
               Cancel
             </Button>

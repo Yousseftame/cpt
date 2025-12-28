@@ -303,7 +303,7 @@ const formatDate = (timestamp: any) => {
             <h2 className="text-4xl font-bold mb-1">
               ${model.price.toLocaleString()}
             </h2>
-            <p className="text-sm opacity-90">USD</p>
+            <p className="text-sm opacity-90">EGP</p>
           </Paper>
 
           {/* Product Info Card */}

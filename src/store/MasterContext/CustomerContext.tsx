@@ -1,3 +1,5 @@
+// src/store/MasterContext/CustomerContext.tsx
+
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import { 
   collection, 
@@ -18,6 +20,7 @@ import {
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../../service/firebase';
 import toast from 'react-hot-toast';
+import { auditLogger } from '../../service/auditLogger';
 
 export interface PurchasedUnit {
   modelId: string;
@@ -36,6 +39,8 @@ export interface Customer {
   status: string;
   createdAt: any;
   createdBy: string;
+  updatedAt?: any;
+  updatedBy?: string;
   purchasedUnits: PurchasedUnit[];
   ticketsCount?: number;
 }
@@ -45,7 +50,7 @@ interface CustomerContextType {
   loading: boolean;
   fetchCustomers: () => Promise<void>;
   getCustomerById: (id: string) => Promise<Customer | null>;
-  createCustomer: (customerData: Omit<Customer, 'id' | 'uid' | 'createdAt' | 'purchasedUnits' | 'status' | 'role' | 'createdBy'> & { password: string }) => Promise<void>;
+  createCustomer: (customerData: Omit<Customer, 'id' | 'uid' | 'createdAt' | 'purchasedUnits' | 'status' | 'role' | 'createdBy' | 'updatedAt' | 'updatedBy'> & { password: string }) => Promise<void>;
   updateCustomer: (id: string, updates: Partial<Customer>) => Promise<void>;
   updateCustomerStatus: (id: string, status: 'active' | 'inactive' | 'pending') => Promise<void>;
   deleteCustomer: (id: string) => Promise<void>;
@@ -64,7 +69,7 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
     try {
-       const q = query(
+      const q = query(
         collection(db, "customers"),
         orderBy("createdAt", "desc")
       );
@@ -110,26 +115,23 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const createCustomer = useCallback(async (customerData: Omit<Customer, 'id' | 'uid' | 'createdAt' | 'purchasedUnits' | 'status' | 'role' | 'createdBy'> & { password: string }) => {
+  const createCustomer = useCallback(async (customerData: Omit<Customer, 'id' | 'uid' | 'createdAt' | 'purchasedUnits' | 'status' | 'role' | 'createdBy' | 'updatedAt' | 'updatedBy'> & { password: string }) => {
     setLoading(true);
     try {
-      // Store the current admin's UID BEFORE creating the customer account
       const adminUid = auth.currentUser?.uid;
       
       if (!adminUid) {
         throw new Error('You must be logged in as an admin to create customers');
       }
 
-      // Create customer auth account
       const userCred = await createUserWithEmailAndPassword(
         auth,
         customerData.email,
         customerData.password
       );
 
-      // Save customer to Firestore using auth UID as document ID (matching admins pattern)
-      await setDoc(doc(db, 'customers', userCred.user.uid), {
-        uid: userCred.user.uid,           // Customer's auth UID
+      const newCustomerData = {
+        uid: userCred.user.uid,
         name: customerData.name,
         email: customerData.email,
         phone: customerData.phone,
@@ -137,8 +139,19 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
         role: 'customer',
         status: 'active',
         createdAt: serverTimestamp(),
-        createdBy: adminUid,               // Admin's UID who created this customer
+        createdBy: adminUid,
         purchasedUnits: [],
+      };
+
+      await setDoc(doc(db, 'customers', userCred.user.uid), newCustomerData);
+
+      // 🔥 LOG AUDIT: Customer Created
+      await auditLogger.log({
+        action: "CREATED_CUSTOMER",
+        entityType: "customer",
+        entityId: userCred.user.uid,
+        entityName: customerData.name,
+        after: newCustomerData,
       });
 
       toast.success('Customer created successfully!');
@@ -155,11 +168,36 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
   const updateCustomer = useCallback(async (id: string, updates: Partial<Customer>) => {
     setLoading(true);
     try {
+      const adminUid = auth.currentUser?.uid;
+      if (!adminUid) throw new Error('Not authenticated');
+
+      // Get before state
+      const before = await getCustomerById(id);
+
       const docRef = doc(db, 'customers', id);
-      await updateDoc(docRef, {
+      const updateData = {
         ...updates,
         updatedAt: serverTimestamp(),
-      });
+        updatedBy: adminUid,
+      };
+
+      await updateDoc(docRef, updateData);
+
+      // Get after state
+      const after = await getCustomerById(id);
+
+      // 🔥 LOG AUDIT: Customer Updated
+      if (before && after) {
+        await auditLogger.log({
+          action: "UPDATED_CUSTOMER",
+          entityType: "customer",
+          entityId: id,
+          entityName: after.name,
+          before: before,
+          after: after,
+        });
+      }
+
       toast.success('Customer updated successfully!');
       await fetchCustomers();
     } catch (error) {
@@ -169,16 +207,39 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  }, [fetchCustomers]);
+  }, [fetchCustomers, getCustomerById]);
 
   const updateCustomerStatus = useCallback(async (id: string, status: 'active' | 'inactive' | 'pending') => {
     setLoading(true);
     try {
+      const adminUid = auth.currentUser?.uid;
+      if (!adminUid) throw new Error('Not authenticated');
+
+      // Get before state
+      const before = await getCustomerById(id);
+
       const docRef = doc(db, 'customers', id);
       await updateDoc(docRef, {
         status,
         updatedAt: serverTimestamp(),
+        updatedBy: adminUid,
       });
+
+      // Get after state
+      const after = await getCustomerById(id);
+
+      // 🔥 LOG AUDIT: Status Changed
+      if (before && after) {
+        await auditLogger.log({
+          action: "CHANGED_CUSTOMER_STATUS",
+          entityType: "customer",
+          entityId: id,
+          entityName: after.name,
+          before: { status: before.status },
+          after: { status: after.status },
+        });
+      }
+
       toast.success(`Customer status updated to ${status}!`);
       await fetchCustomers();
     } catch (error) {
@@ -188,12 +249,27 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  }, [fetchCustomers]);
+  }, [fetchCustomers, getCustomerById]);
 
   const deleteCustomer = useCallback(async (id: string) => {
     setLoading(true);
     try {
+      // Get customer data before deletion
+      const customer = await getCustomerById(id);
+
       await deleteDoc(doc(db, 'customers', id));
+
+      // 🔥 LOG AUDIT: Customer Deleted
+      if (customer) {
+        await auditLogger.log({
+          action: "DELETED_CUSTOMER",
+          entityType: "customer",
+          entityId: id,
+          entityName: customer.name,
+          before: customer,
+        });
+      }
+
       toast.success('Customer deleted successfully!');
       await fetchCustomers();
     } catch (error) {
@@ -203,14 +279,34 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  }, [fetchCustomers]);
+  }, [fetchCustomers, getCustomerById]);
 
   const assignUnit = useCallback(async (customerId: string, unit: PurchasedUnit) => {
     try {
+      const adminUid = auth.currentUser?.uid;
+      if (!adminUid) throw new Error('Not authenticated');
+
       const docRef = doc(db, 'customers', customerId);
       await updateDoc(docRef, {
         purchasedUnits: arrayUnion(unit),
+        updatedBy: adminUid,
+        updatedAt: serverTimestamp(),
       });
+
+      // Get customer info
+      const customer = await getCustomerById(customerId);
+
+      // 🔥 LOG AUDIT: Unit Assigned
+      if (customer) {
+        await auditLogger.log({
+          action: "ASSIGNED_UNIT_TO_CUSTOMER",
+          entityType: "customer",
+          entityId: customerId,
+          entityName: customer.name,
+          after: { unit },
+        });
+      }
+
       toast.success('Unit assigned successfully!');
       await fetchCustomers();
     } catch (error) {
@@ -218,14 +314,34 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
       toast.error('Failed to assign unit');
       throw error;
     }
-  }, [fetchCustomers]);
+  }, [fetchCustomers, getCustomerById]);
 
   const removeUnit = useCallback(async (customerId: string, unit: PurchasedUnit) => {
     try {
+      const adminUid = auth.currentUser?.uid;
+      if (!adminUid) throw new Error('Not authenticated');
+
       const docRef = doc(db, 'customers', customerId);
       await updateDoc(docRef, {
         purchasedUnits: arrayRemove(unit),
+        updatedBy: adminUid,
+        updatedAt: serverTimestamp(),
       });
+
+      // Get customer info
+      const customer = await getCustomerById(customerId);
+
+      // 🔥 LOG AUDIT: Unit Removed
+      if (customer) {
+        await auditLogger.log({
+          action: "REMOVED_UNIT_FROM_CUSTOMER",
+          entityType: "customer",
+          entityId: customerId,
+          entityName: customer.name,
+          before: { unit },
+        });
+      }
+
       toast.success('Unit removed successfully!');
       await fetchCustomers();
     } catch (error) {
@@ -233,10 +349,13 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
       toast.error('Failed to remove unit');
       throw error;
     }
-  }, [fetchCustomers]);
+  }, [fetchCustomers, getCustomerById]);
 
   const updateUnit = useCallback(async (customerId: string, oldUnit: PurchasedUnit, newUnit: PurchasedUnit) => {
     try {
+      const adminUid = auth.currentUser?.uid;
+      if (!adminUid) throw new Error('Not authenticated');
+
       const customer = await getCustomerById(customerId);
       if (!customer) throw new Error('Customer not found');
 
@@ -247,6 +366,18 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
       const docRef = doc(db, 'customers', customerId);
       await updateDoc(docRef, {
         purchasedUnits: updatedUnits,
+        updatedBy: adminUid,
+        updatedAt: serverTimestamp(),
+      });
+
+      // 🔥 LOG AUDIT: Unit Updated
+      await auditLogger.log({
+        action: "UPDATED_CUSTOMER_UNIT",
+        entityType: "customer",
+        entityId: customerId,
+        entityName: customer.name,
+        before: { unit: oldUnit },
+        after: { unit: newUnit },
       });
       
       toast.success('Unit updated successfully!');
@@ -258,8 +389,6 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [getCustomerById, fetchCustomers]);
 
-
-  // fetch ticket id to the customer 
   const getCustomerTicketsCount = useCallback(async (customerId: string): Promise<number> => {
     try {
       const q = query(collection(db, 'tickets'), where('customerId', '==', customerId));

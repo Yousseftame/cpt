@@ -50,7 +50,7 @@ export default function NavBar({ isOpen, setIsOpen }: NavBarProps) {
               <p className="text-sm font-semibold text-gray-700">
                 {user?.email?.split('@')[0] || 'User'}
               </p>
-              <p className="text-xs text-gray-500"> { localStorage.getItem('userRole') || 'User' }</p>
+              <p className="text-xs text-gray-500"> { localStorage.getItem('userName') || 'User' }</p>
             </div>
             <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
               {user?.email?.[0].toUpperCase() || <User size={20} />}
