@@ -194,7 +194,7 @@ setDisabled(true);
       toast.error("Failed to assign unit");
     }
     finally {
-      setDisabled(true);
+      setDisabled(false);
     }
   };
 
@@ -944,6 +944,7 @@ setDisabled(true);
             variant="contained"
             color="error"
             sx={{ textTransform: "none" }}
+            disabled={disabled}
           >
             {disabled ? <Check /> : "Remove Unit"}
           </Button>
