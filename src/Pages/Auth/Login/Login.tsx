@@ -9,6 +9,8 @@ import AuthInput from '../../../components/shared/AuthInput';
 import AuthButton from '../../../components/shared/AuthButton';
 import { doc, getDoc } from 'firebase/firestore';
 import PagesLoader from '../../../components/shared/PagesLoader';
+import { useAdmin } from '../../../store/MasterContext/AdminContext';
+
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -18,6 +20,8 @@ const Login = () => {
   const [checkingAuth, setCheckingAuth] = useState(true);
   // const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
+  const { trackLogin } = useAdmin();
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +48,8 @@ const Login = () => {
       }
 
       toast.success('Login successful!');
+      // await trackLogin(user.uid);
+      
       navigate('/dashboard');
 
     } catch (err: any) {

@@ -46,6 +46,7 @@ import {
   XCircle,
   ChevronDown,
   AlertTriangle,
+  Check,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import PagesLoader from "../../../components/shared/PagesLoader";
@@ -90,6 +91,7 @@ export default function RequestDetails() {
   const [request, setRequest] = useState<any>(null);
   const [models, setModels] = useState<GeneratorModel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [disabled, setDisabled] = useState(false);
 
   // Dialogs state
   const [assignDialog, setAssignDialog] = useState(false);
@@ -107,6 +109,7 @@ export default function RequestDetails() {
 
   const fetchRequest = async () => {
     if (!id) return;
+    
 
     try {
       const docRef = doc(db, "purchaseRequests", id);
@@ -167,8 +170,10 @@ export default function RequestDetails() {
     if (!selectedModel || !serialNumber.trim()) {
       toast.error("Please select a model and enter a serial number");
       return;
+     
     }
-
+    
+setDisabled(true);
     try {
       const docRef = doc(db, "purchaseRequests", id!);
       await updateDoc(docRef, {
@@ -188,6 +193,9 @@ export default function RequestDetails() {
       console.error("Error assigning unit:", error);
       toast.error("Failed to assign unit");
     }
+    finally {
+      setDisabled(true);
+    }
   };
 
   const handleAddNote = async () => {
@@ -195,6 +203,7 @@ export default function RequestDetails() {
       toast.error("Please enter a note");
       return;
     }
+    setDisabled(true);
 
     try {
       const docRef = doc(db, "purchaseRequests", id!);
@@ -214,6 +223,9 @@ export default function RequestDetails() {
       console.error("Error adding note:", error);
       toast.error("Failed to add note");
     }
+    finally { 
+      setDisabled(false);
+     }
   };
 
   const handleEditUnit = async () => {
@@ -221,6 +233,7 @@ export default function RequestDetails() {
       toast.error("Please select a model and enter a serial number");
       return;
     }
+    setDisabled(true);
 
     try {
       const updatedUnits = [...request.assignedUnits];
@@ -245,11 +258,14 @@ export default function RequestDetails() {
       console.error("Error updating unit:", error);
       toast.error("Failed to update unit");
     }
+    finally {
+      setDisabled(false);
+    }
   };
 
   const handleDeleteUnit = async () => {
     if (selectedUnitIndex === -1) return;
-
+   setDisabled(true);
     try {
       const updatedUnits = request.assignedUnits.filter(
         (_: any, index: number) => index !== selectedUnitIndex
@@ -268,11 +284,14 @@ export default function RequestDetails() {
       console.error("Error removing unit:", error);
       toast.error("Failed to remove unit");
     }
+    finally {
+      setDisabled(false);
+    }
   };
 
   const handleDeleteNote = async () => {
     if (selectedNoteIndex === -1) return;
-
+    setDisabled(true);
     try {
       const updatedNotes = request.internalNotes.filter(
         (_: any, index: number) => index !== selectedNoteIndex
@@ -290,6 +309,9 @@ export default function RequestDetails() {
     } catch (error) {
       console.error("Error deleting note:", error);
       toast.error("Failed to delete note");
+    }
+    finally { 
+      setDisabled(false);
     }
   };
 
@@ -320,24 +342,7 @@ export default function RequestDetails() {
     return model?.sku || "N/A";
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "new":
-        return <AlertCircle size={20} />;
-      case "in_review":
-        return <Clock size={20} />;
-      case "contacted":
-        return <Phone size={20} />;
-      case "approved":
-        return <CheckCircle2 size={20} />;
-      case "rejected":
-        return <XCircle size={20} />;
-      case "completed":
-        return <Package size={20} />;
-      default:
-        return <AlertCircle size={20} />;
-    }
-  };
+  
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -799,7 +804,7 @@ export default function RequestDetails() {
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setAssignDialog(false)} sx={{ textTransform: "none" }}>
+          <Button onClick={() => setAssignDialog(false)} sx={{ textTransform: "none" }} disabled={disabled}>
             Cancel
           </Button>
           <Button
@@ -812,8 +817,9 @@ export default function RequestDetails() {
               bgcolor: "#5E35B1",
               "&:hover": { bgcolor: "#5E35B1" },
             }}
+            disabled={disabled}
           >
-            Assign Unit
+            {disabled ? <Check /> : "Assign Unit"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -840,7 +846,7 @@ export default function RequestDetails() {
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setNoteDialog(false)} sx={{ textTransform: "none" }}>
+          <Button onClick={() => setNoteDialog(false)} sx={{ textTransform: "none" }} disabled={disabled}>
             Cancel
           </Button>
           <Button
@@ -851,8 +857,9 @@ export default function RequestDetails() {
               bgcolor: "#4F46E5",
               "&:hover": { bgcolor: "#4338CA" },
             }}
+            disabled={disabled}
           >
-            Add Note
+            {disabled ? <Check /> : "Add Note"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -892,7 +899,7 @@ export default function RequestDetails() {
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setEditUnitDialog(false)} sx={{ textTransform: "none" }}>
+          <Button onClick={() => setEditUnitDialog(false)} sx={{ textTransform: "none" }} disabled={disabled}>
             Cancel
           </Button>
           <Button
@@ -903,8 +910,9 @@ export default function RequestDetails() {
               bgcolor: "#4F46E5",
               "&:hover": { bgcolor: "#4338CA" },
             }}
+            disabled={disabled}
           >
-            Update Unit
+            {disabled ? <Check /> : "Save Changes"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -928,7 +936,7 @@ export default function RequestDetails() {
           </div>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setDeleteUnitDialog(false)} sx={{ textTransform: "none" }}>
+          <Button onClick={() => setDeleteUnitDialog(false)} sx={{ textTransform: "none" }} disabled={disabled}>
             Cancel
           </Button>
           <Button
@@ -937,7 +945,7 @@ export default function RequestDetails() {
             color="error"
             sx={{ textTransform: "none" }}
           >
-            Remove Unit
+            {disabled ? <Check /> : "Remove Unit"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -961,7 +969,7 @@ export default function RequestDetails() {
           </div>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setDeleteNoteDialog(false)} sx={{ textTransform: "none" }}>
+          <Button onClick={() => setDeleteNoteDialog(false)} sx={{ textTransform: "none" }} disabled={disabled} >
             Cancel
           </Button>
           <Button
@@ -969,8 +977,9 @@ export default function RequestDetails() {
             variant="contained"
             color="error"
             sx={{ textTransform: "none" }}
+            disabled={disabled}
           >
-            Delete Note
+            {disabled ? <Check /> : "Delete Note"}
           </Button>
         </DialogActions>
       </Dialog>

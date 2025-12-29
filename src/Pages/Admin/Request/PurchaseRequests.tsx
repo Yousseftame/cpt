@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { collection, getDocs, query, orderBy, doc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "../../../service/firebase";
 import {
   Button,
@@ -34,6 +34,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import PagesLoader from "../../../components/shared/PagesLoader";
+import { auditLogger } from "../../../service/auditLogger";
 
 // Purple & Blue Color Palette
 const colors = {
@@ -117,10 +118,42 @@ export default function PurchaseRequests() {
   const handleStatusChange = async (requestId: string, newStatus: string) => {
     try {
       const docRef = doc(db, "purchaseRequests", requestId);
+      
+      // Get current data before update
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) {
+        toast.error("Request not found");
+        return;
+      }
+      
+      const beforeData = docSnap.data();
+      const oldStatus = beforeData.status;
+      
       await updateDoc(docRef, {
         status: newStatus,
         [`${newStatus}At`]: new Date().toISOString(),
       });
+
+      // 🔥 LOG AUDIT: Request Status Changed
+      await auditLogger.log({
+        action: "CHANGED_REQUEST_STATUS",
+        entityType: "purchaseRequest",
+        entityId: requestId,
+        entityName: `Request from ${beforeData.customerName || "Unknown"}`,
+        before: {
+          status: oldStatus,
+          customerName: beforeData.customerName,
+          modelId: beforeData.modelId,
+          requestedUnits: beforeData.requestedUnits,
+        },
+        after: {
+          status: newStatus,
+          customerName: beforeData.customerName,
+          modelId: beforeData.modelId,
+          requestedUnits: beforeData.requestedUnits,
+        },
+      });
+
       toast.success(`Status updated to ${newStatus}`);
       fetchRequests();
     } catch (error) {
@@ -129,24 +162,6 @@ export default function PurchaseRequests() {
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "new":
-        return <AlertCircle size={16} />;
-      case "in_review":
-        return <Clock size={16} />;
-      case "contacted":
-        return <Phone size={16} />;
-      case "approved":
-        return <CheckCircle2 size={16} />;
-      case "rejected":
-        return <XCircle size={16} />;
-      case "completed":
-        return <Package size={16} />;
-      default:
-        return <AlertCircle size={16} />;
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {

@@ -10,7 +10,7 @@ import {
   Chip,
   Box,
 } from "@mui/material";
-import { Plus, Edit, Trash2, Package, Hash } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Hash,  Check } from "lucide-react";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { db } from "../../../service/firebase";
 import { useCustomer, type PurchasedUnit } from "../../../store/MasterContext/CustomerContext";
@@ -36,6 +36,7 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState<PurchasedUnit | null>(null);
   // const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+    const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     modelId: "",
     serial: "",
@@ -70,6 +71,7 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
       return;
     }
 
+    setLoading(true);
     try {
       const newUnit: PurchasedUnit = {
         modelId: formData.modelId,
@@ -87,6 +89,9 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
     } catch (error) {
       console.error("Error assigning unit:", error);
     }
+    finally {
+      setLoading(false);
+    }
   };
 
   const handleEdit = async () => {
@@ -95,6 +100,7 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
       return;
     }
 
+    setLoading(true);
     try {
       const updatedUnit: PurchasedUnit = {
         modelId: formData.modelId,
@@ -113,10 +119,14 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
     } catch (error) {
       console.error("Error updating unit:", error);
     }
+    finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async () => {
     if (!selectedUnit) return;
+    setLoading(true);
 
     try {
       await removeUnit(customerId, selectedUnit);
@@ -129,6 +139,9 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
       }
     } catch (error) {
       console.error("Error removing unit:", error);
+    }
+    finally {
+      setLoading(false);
     }
   };
 
@@ -266,11 +279,12 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setAssignDialog(false)} sx={{ textTransform: "none" }}>
+          <Button onClick={() => setAssignDialog(false)} sx={{ textTransform: "none" }} disabled={loading}>
             Cancel
           </Button>
           <Button
             onClick={handleAssign}
+            disabled={loading}
             variant="contained"
             sx={{
               px : 2, 
@@ -280,7 +294,7 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
               "&:hover": { bgcolor: "#5E35B1" },
             }}
           >
-            Assign Unit
+            { loading ? <Check /> : "Assign Unit"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -295,6 +309,7 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
               fullWidth
               label="Generator Model"
               value={formData.modelId}
+              
               onChange={(e) => setFormData({ ...formData, modelId: e.target.value })}
               SelectProps={{ native: true }}
             >
@@ -314,7 +329,7 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setEditDialog(false)} sx={{ textTransform: "none" }}>
+          <Button onClick={() => setEditDialog(false)} sx={{ textTransform: "none" }} disabled={loading}>
             Cancel
           </Button>
           <Button
@@ -324,9 +339,11 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
               textTransform: "none",
               bgcolor: "#4F46E5",
               "&:hover": { bgcolor: "#4338CA" },
+              
             }}
+            disabled={loading}
           >
-            Update Unit
+            { loading ? <Check /> : "Save Changes"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -340,7 +357,7 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
           </p>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setDeleteDialog(false)} sx={{ textTransform: "none" }}>
+          <Button onClick={() => setDeleteDialog(false)} sx={{ textTransform: "none" }} disabled={loading}>
             Cancel
           </Button>
           <Button
@@ -348,8 +365,9 @@ export default function CustomerUnitsTab({ customerId, units, onUnitsUpdate }: C
             variant="contained"
             color="error"
             sx={{ textTransform: "none" }}
+            disabled={loading}
           >
-            Remove Unit
+            { loading ? <Check /> : "Remove Unit"}
           </Button>
         </DialogActions>
       </Dialog>

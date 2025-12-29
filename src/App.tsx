@@ -8,7 +8,6 @@ import Dashboard from "./Pages/Dashbaord/Dashboard";
 import { Toaster } from "react-hot-toast";
 import ResetPassword from "./Pages/Auth/ResetPassword/ResetPassword";
 import Request from "./Pages/Admin/Request/Request";
-import AdminRole from "./Pages/Admin/AdminRole/AdminRole";
 import Register from "./Pages/Auth/Register/Register";
 import VerifyAccount from "./Pages/Auth/VerifyAccount/VerifyAccount";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
@@ -26,6 +25,10 @@ import RequestDetails from "./Pages/Admin/Request/RequestDetails";
 import EditCustomer from "./Pages/Admin/Customer/EditCustomer";
 import TicketDetails from "./Pages/Admin/Ticket/TicketDetails";
 import TicketList from "./Pages/Admin/Ticket/TicketList";
+import AdminList from "./Pages/Admin/AdminRole/AdminList";
+import CreateAdmin from "./Pages/Admin/AdminRole/CreateAdmin";
+import EditAdmin from "./Pages/Admin/AdminRole/EditAdmin";
+import AdminDetails from "./Pages/Admin/AdminRole/AdminDetails";
 
 
 function App() {
@@ -93,13 +96,22 @@ function App() {
 
         // Admin Role (Super Admin only)
         {
-          path: "adminRole", 
+          path: "admins", 
           element: (
             <ProtectedRoute allowedRoles={["superAdmin"]}>
-              <AdminRole />
+              <AdminList />
             </ProtectedRoute>
+            
           )
         },
+        { path: "/admins/create", element: <CreateAdmin /> },
+        { path: "/admins/:id", element: <AdminDetails /> },
+        {
+  path: "/admins/:id/edit",
+  element: <EditAdmin />,
+}
+       
+
       
       ],
     },

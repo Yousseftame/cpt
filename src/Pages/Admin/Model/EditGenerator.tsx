@@ -1,14 +1,13 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { TextField, Button, Paper,  Divider,  Box } from "@mui/material";
+import { TextField, Button, Paper, Divider, Box } from "@mui/material";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../service/firebase";
 import toast from "react-hot-toast";
 import { ArrowLeft, Save, Zap } from "lucide-react";
 import Grid from '@mui/material/Grid';
 import PagesLoader from "../../../components/shared/PagesLoader";
-
-
+import { auditLogger } from "../../../service/auditLogger";
 
 interface Specifications {
   phase: string;
@@ -42,6 +41,7 @@ export default function EditGenerator() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
+  const [originalData, setOriginalData] = useState<GeneratorModel | null>(null);
   const [formData, setFormData] = useState<GeneratorModel>({
     name: "",
     sku: "",
@@ -67,10 +67,12 @@ export default function EditGenerator() {
 
         if (docSnap.exists()) {
           const data = docSnap.data() as GeneratorModel;
-          setFormData({
+          const modelData = {
             ...data,
             price: data.price.toString(),
-          });
+          };
+          setFormData(modelData);
+          setOriginalData(modelData);
         } else {
           toast.error("Model not found");
           navigate("/models");
@@ -158,6 +160,34 @@ export default function EditGenerator() {
       };
 
       await updateDoc(docRef, updateData);
+
+      // 🔥 LOG AUDIT: Generator Model Updated
+      if (originalData) {
+        await auditLogger.log({
+          action: "UPDATED_GENERATOR_MODEL",
+          entityType: "generator",
+          entityId: id,
+          entityName: formData.name.trim(),
+          before: {
+            name: originalData.name,
+            sku: originalData.sku,
+            price: Number(originalData.price),
+            category: originalData.category,
+            powerRating: originalData.powerRating,
+            description: originalData.description,
+            specifications: originalData.specifications,
+          },
+          after: {
+            name: updateData.name,
+            sku: updateData.sku,
+            price: updateData.price,
+            category: updateData.category,
+            powerRating: updateData.powerRating,
+            description: updateData.description,
+            specifications: updateData.specifications,
+          },
+        });
+      }
 
       toast.success("Generator model updated successfully!");
       navigate("/models");

@@ -5,13 +5,16 @@ import App from './App.tsx'
 import { AuthProvider } from './store/AuthContext/AuthContext.tsx'
 import { CustomerProvider } from './store/MasterContext/CustomerContext.tsx'
 import { TicketProvider } from './store/MasterContext/TicketContext.tsx'
+import { AdminProvider } from './store/MasterContext/AdminContext.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
       <CustomerProvider>
          <TicketProvider>
+          <AdminProvider>
     <App />
+    </AdminProvider>
     </TicketProvider>
     </CustomerProvider>
     </AuthProvider>

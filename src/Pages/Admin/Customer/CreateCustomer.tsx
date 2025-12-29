@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import { TextField, Button, Paper,  Divider, Box } from "@mui/material";
+import { TextField, Button, Paper,  Divider, Box, InputAdornment, IconButton } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, UserPlus } from "lucide-react";
+import { ArrowLeft, Eye, EyeClosed, Save, UserPlus } from "lucide-react";
 import { useCustomer } from "../../../store/MasterContext/CustomerContext";
 import Grid from '@mui/material/Grid';
 
@@ -26,6 +26,7 @@ export default function CreateCustomer() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isPassVisible , setIsPassVisible] = useState(false);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -150,7 +151,7 @@ export default function CreateCustomer() {
                   fullWidth
                   label="Password"
                   name="password"
-                  type="password"
+                  type={ isPassVisible ? "text" : "password"}
                   value={formData.password}
                   onChange={handleChange}
                   error={!!errors.password}
@@ -158,6 +159,19 @@ export default function CreateCustomer() {
                   required
                   placeholder="••••••••"
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                   InputProps={{
+      endAdornment: (
+        <InputAdornment position="start">
+          <IconButton
+            onClick={() => setIsPassVisible((prev) => !prev)}
+            edge="start"
+          >
+            {isPassVisible ? <Eye size={20} /> : <EyeClosed size={20} />}
+          </IconButton>
+        </InputAdornment>
+      ),
+    }}
+
                 />
               </Grid>
 
