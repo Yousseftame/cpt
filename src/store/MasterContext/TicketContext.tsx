@@ -6,14 +6,14 @@ import {
   getDocs,
   getDoc,
   doc,
-  addDoc,
+ 
   updateDoc,
-  deleteDoc,
+  
   query,
   where,
   serverTimestamp,
   arrayUnion,
-  arrayRemove,
+ 
   orderBy,
   Timestamp,
 } from 'firebase/firestore';

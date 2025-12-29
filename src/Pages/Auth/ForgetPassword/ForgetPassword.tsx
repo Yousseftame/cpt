@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, KeyRound, ArrowRight } from 'lucide-react';
+import { Mail,  ArrowRight } from 'lucide-react';
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from '../../../service/firebase';
 import { useNavigate } from 'react-router-dom';

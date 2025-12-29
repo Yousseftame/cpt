@@ -26,7 +26,7 @@ import {
   FileText,
   Send,
   Paperclip,
-  X,
+ 
   Plus,
   Trash2,
 } from "lucide-react";

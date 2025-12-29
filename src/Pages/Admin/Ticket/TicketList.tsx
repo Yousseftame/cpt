@@ -22,7 +22,7 @@ import {
   AlertCircle,
   Clock,
   CheckCircle2,
-  XCircle,
+  
   TrendingUp,
   AlertTriangle,
   ChevronDown,
@@ -105,22 +105,7 @@ export default function TicketList() {
     setFilteredTickets(filtered);
   }, [searchTerm, statusFilter, priorityFilter, assignmentFilter, tickets, userRole, user?.uid]);
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "open":
-        return <AlertCircle size={16} />;
-      case "in_progress":
-        return <TrendingUp size={16} />;
-      case "resolved":
-        return <CheckCircle2 size={16} />;
-      case "closed":
-        return <CheckCircle2 size={16} />;
-      case "reopened":
-        return <RefreshCw size={16} />;
-      default:
-        return <AlertCircle size={16} />;
-    }
-  };
+  
 
   const getStatusColor = (status: string) => {
     switch (status) {
