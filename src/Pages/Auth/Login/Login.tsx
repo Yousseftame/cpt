@@ -9,7 +9,7 @@ import AuthInput from '../../../components/shared/AuthInput';
 import AuthButton from '../../../components/shared/AuthButton';
 import { doc, getDoc } from 'firebase/firestore';
 import PagesLoader from '../../../components/shared/PagesLoader';
-import { useAdmin } from '../../../store/MasterContext/AdminContext';
+// import { useAdmin } from '../../../store/MasterContext/AdminContext';
 
 
 const Login = () => {
