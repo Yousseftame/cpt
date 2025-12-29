@@ -9,8 +9,7 @@ import AuthInput from '../../../components/shared/AuthInput';
 import AuthButton from '../../../components/shared/AuthButton';
 import { doc, getDoc } from 'firebase/firestore';
 import PagesLoader from '../../../components/shared/PagesLoader';
-// import { useAdmin } from '../../../store/MasterContext/AdminContext';
-
+import { trackLoginDirect } from '../../../service/loginTracker';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -18,10 +17,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [checkingAuth, setCheckingAuth] = useState(true);
-  // const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
-  // const { trackLogin } = useAdmin();
-
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +31,7 @@ const Login = () => {
 
       const docRef = doc(db, "admins", userCredential.user.uid);
       const docSnap = await getDoc(docRef);
+      
       if (docSnap.exists()) {
         localStorage.setItem('userRole', docSnap.data().role);
         localStorage.setItem('userName', docSnap.data().name || '');
@@ -47,9 +44,10 @@ const Login = () => {
         return;
       }
 
+      // Track login
+      await trackLoginDirect(userCredential.user.uid);
+
       toast.success('Login successful!');
-      // await trackLogin(user.uid);
-      
       navigate('/dashboard');
 
     } catch (err: any) {
@@ -87,9 +85,6 @@ const Login = () => {
     <div>
       {/* Logo */}
       <div className="mb-8">
-        {/* <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl mb-4">
-          <Lock className="text-white" size={24} />
-        </div> */}
         <h1 className="text-8xl font-bold text-gray-900 mb-2">
           Hello!
         </h1>
@@ -123,17 +118,9 @@ const Login = () => {
           disabled={loading}
           showPasswordToggle
         />
-        
 
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2 cursor-pointer">
-            {/* <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-            />
-            <span  className="text-sm text-gray-700">Remember me</span> */}
           </label>
 
           <button

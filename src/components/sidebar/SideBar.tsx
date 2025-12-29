@@ -8,7 +8,7 @@ import {
   Users, 
   FileText, 
   Ticket, 
-  
+  ShieldCheck,
   ChevronDown,
   LogOut,
   Cpu
@@ -78,18 +78,18 @@ export default function SideBar({ isOpen, setIsOpen }: SideBarProps) {
       path: '/ticket',
       roles: ['admin', 'superAdmin']
     },
-    // {
-    //   id: 'admins',
-    //   label: 'Admin Management',
-    //   icon: ShieldCheck,
-    //   path: '/admins',
-    //   roles: ['superAdmin'],
-    //   subItems: [
-    //     { label: 'Admin List', path: '/admins' },
-    //     { label: 'Add Admin', path: '/admins/create' }
-    //   ]
+    {
+      id: 'admins',
+      label: 'Admin Management',
+      icon: ShieldCheck,
+      path: '/admins',
+      roles: ['superAdmin'],
+      subItems: [
+        { label: 'Admin List', path: '/admins' },
+        { label: 'Add Admin', path: '/admins/create' }
+      ]
       
-    // }
+    }
   ];
 
   const toggleSubmenu = (id: string) => {

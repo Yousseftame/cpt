@@ -53,21 +53,32 @@ export default function AdminDetails() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!id) return;
+      if (!id) {
+        navigate("/admins");
+        return;
+      }
 
       try {
+        setLoading(true);
         const adminData = await getAdminById(id);
+        
         if (adminData) {
           setAdmin(adminData);
           
           // Fetch recent activity logs
-          const logs = await auditLogger.getAdminActivity(id, 10);
-          setRecentLogs(logs);
+          try {
+            const logs = await auditLogger.getAdminActivity(id, 10);
+            setRecentLogs(logs || []);
+          } catch (logError) {
+            console.error("Error fetching logs:", logError);
+            setRecentLogs([]);
+          }
         } else {
           navigate("/admins");
         }
       } catch (error) {
         console.error("Error fetching admin details:", error);
+        navigate("/admins");
       } finally {
         setLoading(false);
       }
@@ -77,7 +88,8 @@ export default function AdminDetails() {
   }, [id, getAdminById, navigate]);
 
   const handleStatusToggle = async () => {
-    if (!admin) return;
+    if (!admin || !admin.id) return;
+    
     const newStatus = admin.status === "active" ? "inactive" : "active";
     try {
       await updateAdminStatus(admin.id, newStatus);
@@ -88,7 +100,8 @@ export default function AdminDetails() {
   };
 
   const handleDelete = async () => {
-    if (!admin) return;
+    if (!admin || !admin.id) return;
+    
     try {
       await deleteAdmin(admin.id);
       navigate("/admins");
@@ -151,11 +164,11 @@ export default function AdminDetails() {
                 fontSize: "2rem",
               }}
             >
-              {admin.name.charAt(0).toUpperCase()}
+              {admin.name?.charAt(0)?.toUpperCase() || "?"}
             </Avatar>
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">{admin.name}</h1>
-              <p className="text-gray-600 mt-1">{admin.email}</p>
+              <h1 className="text-3xl font-bold text-gray-800">{admin.name || "Unknown"}</h1>
+              <p className="text-gray-600 mt-1">{admin.email || "No email"}</p>
               <div className="flex gap-2 mt-2">
                 <Chip
                   icon={admin.role === "superAdmin" ? <Shield size={14} /> : <User size={14} />}
@@ -222,7 +235,7 @@ export default function AdminDetails() {
                 <Mail size={20} style={{ color: colors.textSecondary }} />
                 <div>
                   <p className="text-sm text-gray-500">Email</p>
-                  <p className="font-medium">{admin.email}</p>
+                  <p className="font-medium">{admin.email || "N/A"}</p>
                 </div>
               </div>
 
@@ -276,7 +289,7 @@ export default function AdminDetails() {
               Login History
             </h2>
 
-            {admin.loginHistory && admin.loginHistory.length > 0 ? (
+            {admin.loginHistory && Array.isArray(admin.loginHistory) && admin.loginHistory.length > 0 ? (
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {admin.loginHistory.slice(-5).reverse().map((login: any, index: number) => (
                   <div key={index} className="p-2 bg-gray-50 rounded border border-gray-200">
@@ -307,14 +320,14 @@ export default function AdminDetails() {
             </h2>
 
             <Grid container spacing={2}>
-              {Object.entries(admin.permissions).map(([module, perms]: [string, any]) => (
+              {admin.permissions && Object.entries(admin.permissions).map(([module, perms]: [string, any]) => (
                 <Grid size={{ xs: 12, sm: 6, md: 4 }} key={module}>
                   <Paper sx={{ p: 2, bgcolor: "#F9FAFB", borderRadius: 2 }}>
                     <h3 className="font-semibold mb-2 text-gray-700 capitalize">
                       {module.replace(/([A-Z])/g, " $1").trim()}
                     </h3>
                     <div className="space-y-1">
-                      {Object.entries(perms).map(([action, allowed]: [string, any]) => (
+                      {perms && Object.entries(perms).map(([action, allowed]: [string, any]) => (
                         <div key={action} className="flex items-center justify-between">
                           <span className="text-sm capitalize">{action}</span>
                           {allowed ? (
@@ -339,16 +352,9 @@ export default function AdminDetails() {
               <h2 className="text-xl font-semibold" style={{ color: colors.textPrimary }}>
                 Recent Activity
               </h2>
-              <Button
-                variant="text"
-                size="small"
-                sx={{ textTransform: "none", color: colors.primary }}
-              >
-                View All Logs
-              </Button>
             </div>
 
-            {recentLogs.length > 0 ? (
+            {recentLogs && recentLogs.length > 0 ? (
               <div className="space-y-2">
                 {recentLogs.map((log) => (
                   <div key={log.id} className="p-3 bg-gray-50 rounded border border-gray-200">
@@ -356,22 +362,22 @@ export default function AdminDetails() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <Chip
-                            label={log.action.replace(/_/g, " ")}
+                            label={log.action?.replace(/_/g, " ") || "Unknown Action"}
                             size="small"
                             sx={{
                               bgcolor: "white",
-                              color: getActionColor(log.action),
-                              border: `1px solid ${getActionColor(log.action)}`,
+                              color: getActionColor(log.action || ""),
+                              border: `1px solid ${getActionColor(log.action || "")}`,
                               fontWeight: 600,
                               fontSize: "0.7rem",
                             }}
                           />
                           <span className="text-sm text-gray-600 capitalize">
-                            {log.entityType}
+                            {log.entityType || "Unknown"}
                           </span>
                         </div>
-                        <p className="text-sm font-medium">{log.entityName}</p>
-                        {log.changes && log.changes.length > 0 && (
+                        <p className="text-sm font-medium">{log.entityName || "Unknown Entity"}</p>
+                        {log.changes && Array.isArray(log.changes) && log.changes.length > 0 && (
                           <div className="mt-1">
                             {log.changes.slice(0, 2).map((change, idx) => (
                               <p key={idx} className="text-xs text-gray-600">
@@ -403,7 +409,7 @@ export default function AdminDetails() {
         <DialogTitle>Delete Admin Account</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete <strong>{admin.name}</strong>? This action cannot be undone.
+            Are you sure you want to delete <strong>{admin.name || "this admin"}</strong>? This action cannot be undone.
             All data associated with this admin will be permanently removed.
           </DialogContentText>
         </DialogContent>

@@ -58,20 +58,23 @@ export default function AdminList() {
   }, [fetchAdmins]);
 
   useEffect(() => {
-    let filtered = admins;
+    let filtered = [...admins];
 
-    if (searchTerm) {
+    // Apply search filter
+    if (searchTerm.trim()) {
       filtered = filtered.filter(
         (admin) =>
-          admin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          admin.email.toLowerCase().includes(searchTerm.toLowerCase())
+          admin.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          admin.email?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
+    // Apply role filter
     if (roleFilter !== "all") {
       filtered = filtered.filter((admin) => admin.role === roleFilter);
     }
 
+    // Apply status filter
     if (statusFilter !== "all") {
       filtered = filtered.filter((admin) => admin.status === statusFilter);
     }
@@ -405,17 +408,17 @@ export default function AdminList() {
                       fontSize: "1.5rem",
                     }}
                   >
-                    {admin.name.charAt(0).toUpperCase()}
+                    {admin.name?.charAt(0)?.toUpperCase() || "?"}
                   </Avatar>
 
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <h3 className="text-lg font-semibold mb-1" style={{ color: colors.textPrimary }}>
-                          {admin.name}
+                          {admin.name || "Unknown"}
                         </h3>
                         <p style={{ color: colors.textSecondary }} className="text-sm mb-2">
-                          {admin.email}
+                          {admin.email || "No email"}
                         </p>
                         <div className="flex items-center gap-2 text-sm" style={{ color: colors.textSecondary }}>
                           <Calendar size={14} />
