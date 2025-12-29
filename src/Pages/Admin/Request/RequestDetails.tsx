@@ -50,6 +50,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import PagesLoader from "../../../components/shared/PagesLoader";
+import { auditLogger } from "../../../service/auditLogger";
 
 const colors = {
   primary: "#5E35B1",
@@ -183,6 +184,24 @@ setDisabled(true);
           assignedAt: new Date().toISOString(),
         }),
       });
+      
+      const modelDoc = await getDoc(doc(db, "generatorModels", selectedModel));
+      const modelName = modelDoc.exists() ? modelDoc.data().name : selectedModel;
+
+      // 🔥 LOG AUDIT: Unit Assigned to Request
+      await auditLogger.log({
+              action: "ASSIGNED_UNIT_TO_REQUEST",
+              entityType: "purchaseRequest",
+              entityId: request.id,
+              entityName: `Request from ${request.customerName || "Unknown"}`,
+              after: {
+                unit: {
+                  modelId: selectedModel,
+                  modelName: modelName,
+                  serial: serialNumber,
+                }
+              },
+            });
 
       toast.success("Unit assigned successfully!");
       setAssignDialog(false);
@@ -214,6 +233,16 @@ setDisabled(true);
           createdBy: "Admin", // Replace with actual user name
         }),
       });
+      // 🔥 LOG AUDIT: Note Added to Request
+            await auditLogger.log({
+              action: "ADDED_REQUEST_NOTE",
+              entityType: "purchaseRequest",
+              entityId: request.id,
+              entityName: `Request from ${request.customerName || "Unknown"}`,
+              after: {
+                note: noteText.substring(0, 100) + (noteText.length > 100 ? "..." : "")
+              },
+            });
 
       toast.success("Note added successfully!");
       setNoteDialog(false);
