@@ -18,6 +18,8 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../../service/firebase';
 import toast from 'react-hot-toast';
 import { auditLogger } from '../../service/auditLogger';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+
 
 export interface AdminPermissions {
   customers: {
@@ -401,47 +403,62 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const deleteAdmin = useCallback(
-    async (id: string) => {
-      setLoading(true);
-      try {
-        const currentAdminUid = auth.currentUser?.uid;
-        if (!currentAdminUid) throw new Error('Not authenticated');
+  async (id: string) => {
+    setLoading(true);
+    try {
+      const currentAdminUid = auth.currentUser?.uid;
+      if (!currentAdminUid) throw new Error('Not authenticated');
 
-        // Get admin data before deletion
-        const admin = await getAdminById(id);
+      // Get admin data before deletion
+      const admin = await getAdminById(id);
 
-        if (!admin) {
-          throw new Error('Admin not found');
-        }
-
-        // Prevent self-deletion
-        if (admin.uid === currentAdminUid) {
-          throw new Error('You cannot delete your own account');
-        }
-
-        await deleteDoc(doc(db, 'admins', id));
-
-        // 🔥 LOG AUDIT: Admin Deleted
-        await auditLogger.log({
-          action: 'DELETED_ADMIN',
-          entityType: 'admin',
-          entityId: id,
-          entityName: admin.name,
-          before: admin,
-        });
-
-        toast.success('Admin deleted successfully!');
-        await fetchAdmins();
-      } catch (error: any) {
-        console.error('Error deleting admin:', error);
-        toast.error(error.message || 'Failed to delete admin');
-        throw error;
-      } finally {
-        setLoading(false);
+      if (!admin) {
+        throw new Error('Admin not found');
       }
-    },
-    [fetchAdmins, getAdminById]
-  );
+
+      // Prevent self-deletion
+      if (admin.uid === currentAdminUid) {
+        throw new Error('You cannot delete your own account');
+      }
+
+      // Call Cloud Function to delete from both Firestore and Auth
+      const functions = getFunctions();
+      const deleteAdminAccount = httpsCallable(functions, 'deleteAdminAccount');
+      
+      const result = await deleteAdminAccount({ uid: admin.uid });
+      
+      console.log('Delete result:', result.data);
+
+      // 🔥 LOG AUDIT: Admin Deleted
+      await auditLogger.log({
+        action: 'DELETED_ADMIN',
+        entityType: 'admin',
+        entityId: id,
+        entityName: admin.name,
+        before: admin,
+      });
+
+      toast.success('Admin deleted successfully from both database and authentication!');
+      await fetchAdmins();
+    } catch (error: any) {
+      console.error('Error deleting admin:', error);
+      
+      // More specific error messages
+      if (error.code === 'functions/permission-denied') {
+        toast.error('You do not have permission to delete admin accounts');
+      } else if (error.code === 'functions/unauthenticated') {
+        toast.error('You must be logged in to delete admins');
+      } else {
+        toast.error(error.message || 'Failed to delete admin');
+      }
+      
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  },
+  [fetchAdmins, getAdminById]
+);
 
   const trackLogin = useCallback(async (adminId: string) => {
     try {
