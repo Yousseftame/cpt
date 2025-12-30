@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import Grid from "@mui/material/Grid";
 import type { Admin } from "../../../store/MasterContext/AdminContext";
-import type { AuditAction, EntityType } from "../../../types/auditLog.types";
 
 const colors = {
   primary: "#5E35B1",
@@ -47,24 +46,6 @@ interface AuditLogFiltersProps {
   onClearFilters: () => void;
   resultCount?: number;
 }
-
-const actionOptions = [
-  { value: "all", label: "All Actions" },
-  { value: "CREATED", label: "Created" },
-  { value: "UPDATED", label: "Updated" },
-  { value: "DELETED", label: "Deleted" },
-  { value: "CHANGED", label: "Changed Status" },
-  { value: "ASSIGNED", label: "Assigned" },
-  { value: "ENABLED", label: "Enabled" },
-  { value: "DISABLED", label: "Disabled" },
-  { value: "ADDED", label: "Added" },
-  { value: "REMOVED", label: "Removed" },
-  { value: "REOPENED", label: "Reopened" },
-  { value: "CLOSED", label: "Closed" },
-  { value: "COMPLETED", label: "Completed" },
-  { value: "LOGIN", label: "Login" },
-  { value: "LOGOUT", label: "Logout" },
-];
 
 const entityOptions = [
   { value: "all", label: "All Entities" },
@@ -96,7 +77,6 @@ export default function AuditLogFilters({
     return (
       filters.searchTerm ||
       filters.selectedAdmin !== "all" ||
-      filters.selectedAction !== "all" ||
       filters.selectedEntity !== "all" ||
       filters.startDate ||
       filters.endDate
@@ -193,24 +173,6 @@ export default function AuditLogFilters({
               </FormControl>
             </Grid>
 
-            {/* Action Type Filter */}
-            {/* <Grid size={{ xs: 12, md: 4 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Action Type</InputLabel>
-                <Select
-                  value={filters.selectedAction}
-                  onChange={(e) => updateFilter("selectedAction", e.target.value)}
-                  label="Action Type"
-                >
-                  {actionOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid> */}
-
             {/* Start Date */}
             <Grid size={{ xs: 12, md: 4 }}>
               <TextField
@@ -228,7 +190,7 @@ export default function AuditLogFilters({
             </Grid>
 
             {/* End Date */}
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 size="small"
@@ -245,7 +207,7 @@ export default function AuditLogFilters({
             </Grid>
 
             {/* Action Buttons */}
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <div className="flex gap-2 h-full items-center">
                 <Button
                   fullWidth
@@ -258,7 +220,7 @@ export default function AuditLogFilters({
                     "&:hover": { bgcolor: colors.primaryLight },
                   }}
                 >
-                  Apply
+                  Apply Filters
                 </Button>
                 <Button
                   fullWidth
@@ -267,7 +229,7 @@ export default function AuditLogFilters({
                   disabled={!hasActiveFilters()}
                   sx={{ textTransform: "none" }}
                 >
-                  Clear
+                  Clear All
                 </Button>
               </div>
             </Grid>
@@ -293,11 +255,6 @@ export default function AuditLogFilters({
                 {filters.selectedEntity !== "all" && (
                   <span className="text-xs px-2 py-1 bg-white rounded-full border border-gray-300">
                     Entity: {entityOptions.find((e) => e.value === filters.selectedEntity)?.label}
-                  </span>
-                )}
-                {filters.selectedAction !== "all" && (
-                  <span className="text-xs px-2 py-1 bg-white rounded-full border border-gray-300">
-                    Action: {actionOptions.find((a) => a.value === filters.selectedAction)?.label}
                   </span>
                 )}
                 {filters.startDate && (

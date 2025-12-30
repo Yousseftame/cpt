@@ -8,7 +8,7 @@ import {
   Avatar,
   CircularProgress,
   Tooltip,
-  Alert,
+ 
 } from "@mui/material";
 import {
   Download,
@@ -19,7 +19,7 @@ import {
   User,
 } from "lucide-react";
 import { auditLogger } from "../../../service/auditLogger";
-import type { AuditLog, AuditAction, EntityType } from "../../../types/auditLog.types";
+import type { AuditLog,  EntityType } from "../../../types/auditLog.types";
 import Grid from "@mui/material/Grid";
 import PagesLoader from "../../../components/shared/PagesLoader";
 import { useAdmin } from "../../../store/MasterContext/AdminContext";
@@ -110,9 +110,6 @@ export default function AuditLogs() {
       
       if (filters.selectedAdmin !== "all") {
         queryFilters.adminId = filters.selectedAdmin;
-      }
-      if (filters.selectedAction !== "all") {
-        queryFilters.action = filters.selectedAction as AuditAction;
       }
       if (filters.selectedEntity !== "all") {
         queryFilters.entityType = filters.selectedEntity as EntityType;
@@ -240,9 +237,34 @@ export default function AuditLogs() {
 
   const formatDate = (timestamp: any): string => {
     if (!timestamp) return "N/A";
+    
     try {
-      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-      if (isNaN(date.getTime())) return "Invalid Date";
+      let date: Date;
+      
+      // Handle Firestore Timestamp
+      if (timestamp && typeof (timestamp as any).toDate === 'function') {
+        date = (timestamp as any).toDate();
+      } 
+      // Handle Date object
+      else if (timestamp instanceof Date) {
+        date = timestamp;
+      }
+      // Handle string or number timestamp
+      else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+        date = new Date(timestamp);
+      }
+      // Handle object with seconds (Firestore Timestamp-like)
+      else if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp) {
+        date = new Date((timestamp as any).seconds * 1000);
+      }
+      else {
+        return "Invalid Date";
+      }
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return "Invalid Date";
+      }
       
       return date.toLocaleString("en-US", {
         year: "numeric",
@@ -252,7 +274,7 @@ export default function AuditLogs() {
         minute: "2-digit",
       });
     } catch (error) {
-      console.error("Error formatting date:", error);
+      console.error("Error formatting date:", error, timestamp);
       return "N/A";
     }
   };
@@ -274,7 +296,29 @@ export default function AuditLogs() {
       return logs.filter((log) => {
         try {
           if (!log.createdAt) return false;
-          const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
+          
+          let logDate: Date;
+          
+          // Handle Firestore Timestamp
+          if (log.createdAt && typeof (log.createdAt as any).toDate === 'function') {
+            logDate = (log.createdAt as any).toDate();
+          } 
+          // Handle Date object
+          else if (log.createdAt instanceof Date) {
+            logDate = log.createdAt;
+          }
+          // Handle string or number timestamp
+          else if (typeof log.createdAt === 'string' || typeof log.createdAt === 'number') {
+            logDate = new Date(log.createdAt);
+          }
+          // Handle object with seconds
+          else if (log.createdAt && typeof log.createdAt === 'object' && 'seconds' in log.createdAt) {
+            logDate = new Date((log.createdAt as any).seconds * 1000);
+          }
+          else {
+            return false;
+          }
+          
           if (isNaN(logDate.getTime())) return false;
           return logDate > oneDayAgo;
         } catch {
@@ -430,7 +474,6 @@ export default function AuditLogs() {
             {filters.searchTerm ||
             filters.selectedAdmin !== "all" ||
             filters.selectedEntity !== "all" ||
-            filters.selectedAction !== "all" ||
             filters.startDate ||
             filters.endDate
               ? "Try adjusting your filters to see more results"
