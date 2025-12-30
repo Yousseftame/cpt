@@ -126,7 +126,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const fetchAdmins = useCallback(async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, 'admins'), orderBy('createdAt', 'asc'));
+      const q = query(collection(db, 'admins'), orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
       const adminsData = snapshot.docs.map((docSnap) => ({
         id: docSnap.id,

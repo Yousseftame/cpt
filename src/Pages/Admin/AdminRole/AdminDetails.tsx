@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Button,
@@ -11,6 +12,7 @@ import {
   DialogContent,
   DialogActions,
   DialogContentText,
+  Alert,
 } from "@mui/material";
 import {
   ArrowLeft,
@@ -24,6 +26,7 @@ import {
   XCircle,
   User,
   Activity,
+  AlertTriangle,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAdmin } from "../../../store/MasterContext/AdminContext";
@@ -49,7 +52,9 @@ export default function AdminDetails() {
   const [admin, setAdmin] = useState<any>(null);
   const [recentLogs, setRecentLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [logsError, setLogsError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,12 +70,20 @@ export default function AdminDetails() {
         if (adminData) {
           setAdmin(adminData);
           
-          // Fetch recent activity logs
+          // Fetch recent activity logs with better error handling
           try {
             const logs = await auditLogger.getAdminActivity(id, 10);
             setRecentLogs(logs || []);
-          } catch (logError) {
+            setLogsError(null);
+          } catch (logError: any) {
             console.error("Error fetching logs:", logError);
+            
+            // Check if it's an index error
+            if (logError.message?.includes('index')) {
+              setLogsError("Firestore index is building. Recent activity will be available in 1-2 minutes.");
+            } else {
+              setLogsError("Unable to load recent activity at this time.");
+            }
             setRecentLogs([]);
           }
         } else {
@@ -101,12 +114,15 @@ export default function AdminDetails() {
 
   const handleDelete = async () => {
     if (!admin || !admin.id) return;
-    
+    setDeleteLoading(true);
     try {
       await deleteAdmin(admin.id);
       navigate("/admins");
     } catch (error) {
       console.error("Error deleting admin:", error);
+    }
+    finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -319,29 +335,33 @@ export default function AdminDetails() {
               Permissions
             </h2>
 
-            <Grid container spacing={2}>
-              {admin.permissions && Object.entries(admin.permissions).map(([module, perms]: [string, any]) => (
-                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={module}>
-                  <Paper sx={{ p: 2, bgcolor: "#F9FAFB", borderRadius: 2 }}>
-                    <h3 className="font-semibold mb-2 text-gray-700 capitalize">
-                      {module.replace(/([A-Z])/g, " $1").trim()}
-                    </h3>
-                    <div className="space-y-1">
-                      {perms && Object.entries(perms).map(([action, allowed]: [string, any]) => (
-                        <div key={action} className="flex items-center justify-between">
-                          <span className="text-sm capitalize">{action}</span>
-                          {allowed ? (
-                            <CheckCircle size={16} style={{ color: colors.success }} />
-                          ) : (
-                            <XCircle size={16} style={{ color: colors.error }} />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
+            {admin.permissions ? (
+              <Grid container spacing={2}>
+                {Object.entries(admin.permissions).map(([module, perms]: [string, any]) => (
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={module}>
+                    <Paper sx={{ p: 2, bgcolor: "#F9FAFB", borderRadius: 2 }}>
+                      <h3 className="font-semibold mb-2 text-gray-700 capitalize">
+                        {module.replace(/([A-Z])/g, " $1").trim()}
+                      </h3>
+                      <div className="space-y-1">
+                        {perms && Object.entries(perms).map(([action, allowed]: [string, any]) => (
+                          <div key={action} className="flex items-center justify-between">
+                            <span className="text-sm capitalize">{action}</span>
+                            {allowed ? (
+                              <CheckCircle size={16} style={{ color: colors.success }} />
+                            ) : (
+                              <XCircle size={16} style={{ color: colors.error }} />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+            ) : (
+              <p className="text-gray-500 text-center py-4">No permissions configured</p>
+            )}
           </Paper>
         </Grid>
 
@@ -353,6 +373,16 @@ export default function AdminDetails() {
                 Recent Activity
               </h2>
             </div>
+
+            {logsError && (
+              <Alert 
+                severity="warning" 
+                icon={<AlertTriangle size={20} />}
+                sx={{ mb: 3 }}
+              >
+                {logsError}
+              </Alert>
+            )}
 
             {recentLogs && recentLogs.length > 0 ? (
               <div className="space-y-2">
@@ -394,9 +424,9 @@ export default function AdminDetails() {
                   </div>
                 ))}
               </div>
-            ) : (
+            ) : !logsError ? (
               <p className="text-gray-500 text-center py-8">No recent activity</p>
-            )}
+            ) : null}
           </Paper>
         </Grid>
       </Grid>
@@ -414,7 +444,7 @@ export default function AdminDetails() {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} sx={{ textTransform: "none" }}>
+          <Button onClick={() => setDeleteDialogOpen(false)} sx={{ textTransform: "none" }} disabled={deleteLoading}>
             Cancel
           </Button>
           <Button
@@ -422,8 +452,9 @@ export default function AdminDetails() {
             color="error"
             variant="contained"
             sx={{ textTransform: "none" }}
+            disabled={deleteLoading}
           >
-            Delete
+            {deleteLoading ? "Deleting..." : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>
