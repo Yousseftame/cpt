@@ -157,8 +157,9 @@ const Login = () => {
         <button
           onClick={() => navigate('/register')}
           type="button"
-          className="text-purple-600 hover:text-purple-600 font-bold transition-all duration-300 disabled:opacity-50 hover:underline underline-offset-4"
-          disabled={loading}
+          className="text-purple-600  font-bold transition-all duration-300 disabled:opacity-50  underline-offset-4"
+          disabled
+          
         >
           Create Account
         </button>

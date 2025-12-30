@@ -12,7 +12,7 @@ import {
   ChevronDown,
   LogOut,
   Cpu,
-  // History 
+  History 
 } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext/AuthContext';
 
@@ -91,13 +91,13 @@ export default function SideBar({ isOpen, setIsOpen }: SideBarProps) {
       ]
       
     },
-    //  {
-    //   id: 'audit-logs',
-    //   label: 'Audit Logs',
-    //   icon: History,
-    //   path: '/audit-logs',
-    //   roles: [ 'superAdmin']
-    // },
+     {
+      id: 'audit-logs',
+      label: 'Audit Logs',
+      icon: History,
+      path: '/audit-logs',
+      roles: [ 'superAdmin']
+    },
     
   ];
 
