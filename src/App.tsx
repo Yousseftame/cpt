@@ -29,6 +29,7 @@ import AdminList from "./Pages/Admin/AdminRole/AdminList";
 import CreateAdmin from "./Pages/Admin/AdminRole/CreateAdmin";
 import EditAdmin from "./Pages/Admin/AdminRole/EditAdmin";
 import AdminDetails from "./Pages/Admin/AdminRole/AdminDetails";
+import AuditLogs from "./Pages/Admin/AuditLogs/AuditLogs";
 
 
 function App() {
@@ -106,10 +107,8 @@ function App() {
         },
         { path: "/admins/create", element: <CreateAdmin /> },
         { path: "/admins/:id", element: <AdminDetails /> },
-        {
-  path: "/admins/:id/edit",
-  element: <EditAdmin />,
-}
+        { path: "/admins/:id/edit", element: <EditAdmin /> },
+        { path: "audit-logs", element: <AuditLogs /> }
        
 
       

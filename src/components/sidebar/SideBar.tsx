@@ -11,7 +11,8 @@ import {
   ShieldCheck,
   ChevronDown,
   LogOut,
-  Cpu
+  Cpu,
+  History 
 } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext/AuthContext';
 
@@ -89,7 +90,15 @@ export default function SideBar({ isOpen, setIsOpen }: SideBarProps) {
         { label: 'Add Admin', path: '/admins/create' }
       ]
       
-    }
+    },
+     {
+      id: 'audit-logs',
+      label: 'Audit Logs',
+      icon: History,
+      path: '/audit-logs',
+      roles: [ 'superAdmin']
+    },
+    
   ];
 
   const toggleSubmenu = (id: string) => {

@@ -44,7 +44,7 @@ const Login = () => {
         return;
       }
 
-      // Track login
+      // Track login 
       await trackLoginDirect(userCredential.user.uid);
 
       toast.success('Login successful!');
