@@ -21,6 +21,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../../service/firebase';
 import toast from 'react-hot-toast';
 import { auditLogger } from '../../service/auditLogger';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 export interface PurchasedUnit {
   modelId: string;
@@ -251,13 +252,25 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [fetchCustomers, getCustomerById]);
 
+
+  // delete customer 
   const deleteCustomer = useCallback(async (id: string) => {
     setLoading(true);
     try {
       // Get customer data before deletion
       const customer = await getCustomerById(id);
 
-      await deleteDoc(doc(db, 'customers', id));
+      // Call cloud function to delete customer account
+      const functions = getFunctions();
+const deleteCustomerAccount = httpsCallable(
+  functions,
+  'deleteCustomerAccount'
+);
+
+await deleteCustomerAccount({
+  uid: customer?.uid
+});
+
 
       // 🔥 LOG AUDIT: Customer Deleted
       if (customer) {

@@ -27,8 +27,9 @@ export default function NavBar({ isOpen, setIsOpen }: NavBarProps) {
 
           {/* Search Bar */}
           <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg w-80">
-            <Search size={20} className="text-gray-400" />
+            <Search  size={20} className="text-gray-400" />
             <input
+            disabled
               type="text"
               placeholder="Search..."
               className="bg-transparent outline-none text-sm w-full text-gray-700"

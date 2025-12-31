@@ -402,7 +402,8 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     [fetchAdmins, getAdminById]
   );
 
-  const deleteAdmin = useCallback(
+  // Delete Admin Function
+ const deleteAdmin = useCallback(
   async (id: string) => {
     setLoading(true);
     try {
@@ -421,11 +422,20 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('You cannot delete your own account');
       }
 
-      // Call Cloud Function to delete from both Firestore and Auth
+      console.log('Attempting to delete admin:', {
+        adminId: id,
+        adminUid: admin.uid,
+        currentUserUid: currentAdminUid
+      });
+
+      // Get functions instance
       const functions = getFunctions();
       const deleteAdminAccount = httpsCallable(functions, 'deleteAdminAccount');
       
-      const result = await deleteAdminAccount({ uid: admin.uid });
+      // ✅ Call the cloud function with the correct data structure
+      const result = await deleteAdminAccount({ 
+        uid: admin.uid  // Make sure we're sending the uid from the admin object
+      });
       
       console.log('Delete result:', result.data);
 
@@ -438,18 +448,22 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         before: admin,
       });
 
-      toast.success('Admin deleted successfully from both database and authentication!');
+      toast.success('Admin deleted successfully!');
       await fetchAdmins();
     } catch (error: any) {
       console.error('Error deleting admin:', error);
       
-      // More specific error messages
+      // Handle Firebase Functions specific errors
       if (error.code === 'functions/permission-denied') {
         toast.error('You do not have permission to delete admin accounts');
       } else if (error.code === 'functions/unauthenticated') {
-        toast.error('You must be logged in to delete admins');
+        toast.error('Authentication required');
+      } else if (error.code === 'functions/invalid-argument') {
+        toast.error('Invalid request: Admin ID is missing or invalid');
+      } else if (error.message) {
+        toast.error(error.message);
       } else {
-        toast.error(error.message || 'Failed to delete admin');
+        toast.error('Failed to delete admin');
       }
       
       throw error;

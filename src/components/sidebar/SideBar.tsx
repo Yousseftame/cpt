@@ -15,6 +15,7 @@ import {
   History 
 } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext/AuthContext';
+import Swal from "sweetalert2";
 
 interface SideBarProps {
   isOpen: boolean;
@@ -36,6 +37,8 @@ export default function SideBar({ isOpen, setIsOpen }: SideBarProps) {
   const { role, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+let timerInterval: ReturnType<typeof setInterval>;
+
 
   const menuItems: MenuItem[] = [
     {
@@ -113,9 +116,34 @@ export default function SideBar({ isOpen, setIsOpen }: SideBarProps) {
   };
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
+  Swal.fire({
+    title: "Logging out...",
+    html: "You will be logged out in <b></b> ms",
+    timer: 1500,
+    timerProgressBar: true,
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+
+      const popup = Swal.getPopup();
+      const timerEl = popup?.querySelector("b");
+
+      timerInterval = setInterval(() => {
+        if (timerEl) {
+          timerEl.textContent = `${Swal.getTimerLeft()}`;
+        }
+      }, 100);
+    },
+    willClose: () => {
+      clearInterval(timerInterval);
+    }
+  }).then(async (result) => {
+    if (result.dismiss === Swal.DismissReason.timer) {
+      await logout();
+      navigate("/login");
+    }
+  });
+};
 
   const isActive = (path?: string) => {
     if (!path) return false;

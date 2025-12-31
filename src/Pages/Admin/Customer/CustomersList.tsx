@@ -19,7 +19,8 @@ import {
   InputAdornment,
   Avatar,
   Paper,
-  Box
+  Box,
+  CircularProgress
 } from "@mui/material";
 import {
   Edit,
@@ -40,6 +41,7 @@ import {
   XCircle,
   Clock,
   Users,
+  Check,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCustomer } from "../../../store/MasterContext/CustomerContext";
@@ -75,6 +77,7 @@ export default function CustomersList() {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [statusAnchorEl, setStatusAnchorEl] = useState<null | HTMLElement>(null);
   const [customerForStatusChange, setCustomerForStatusChange] = useState<any>(null);
+  const [loadingDelete, setLoadingDelete] = useState(false);
 
   const navigate = useNavigate();
 
@@ -106,6 +109,7 @@ export default function CustomersList() {
 
   const handleDelete = async () => {
     if (!customerToDelete) return;
+     setLoadingDelete(true);
 
     try {
       await deleteCustomer(customerToDelete.id);
@@ -113,6 +117,9 @@ export default function CustomersList() {
       setCustomerToDelete(null);
     } catch (error) {
       console.error("Error deleting customer:", error);
+    }
+    finally {
+      setLoadingDelete(false);
     }
   };
 
@@ -660,7 +667,9 @@ export default function CustomersList() {
               textTransform: "none",
               borderColor: colors.border,
               color: colors.textPrimary,
+              
             }}
+            disabled ={loadingDelete}
           >
             Cancel
           </Button>
@@ -672,9 +681,11 @@ export default function CustomersList() {
               textTransform: "none",
               bgcolor: colors.error,
               "&:hover": { bgcolor: "#D32F2F" },
+              
             }}
+            disabled={loadingDelete}
           >
-            Delete Customer
+            {loadingDelete ? <Check /> : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>
