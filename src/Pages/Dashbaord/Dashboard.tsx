@@ -18,11 +18,12 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-  Calendar,
   ArrowRight,
   Zap,
   Target,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import EnhancedDashboardHeader from './EnhancedDashboardHeader';
 
 const colors = {
   primary: "#5E35B1",
@@ -38,18 +39,30 @@ const colors = {
   textSecondary: "#607D8B",
   border: "#E0E0E0",
   lavender: "#EDE7F6",
-};
+} as const;
+
+interface AnimatedCounterProps {
+  end: number;
+  duration?: number;
+  prefix?: string;
+  suffix?: string;
+}
 
 // Animated Counter Component
-const AnimatedCounter = ({ end, duration = 2000, prefix = "", suffix = "" }) => {
+const AnimatedCounter: React.FC<AnimatedCounterProps> = ({ 
+  end, 
+  duration = 2000, 
+  prefix = "", 
+  suffix = "" 
+}) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    let startTime;
-    let animationFrame;
+    let startTime: number | null = null;
+    let animationFrame: number;
 
-    const animate = (currentTime) => {
-      if (!startTime) startTime = currentTime;
+    const animate = (currentTime: number) => {
+      if (startTime === null) startTime = currentTime;
       const progress = Math.min((currentTime - startTime) / duration, 1);
       
       setCount(Math.floor(progress * end));
@@ -66,8 +79,24 @@ const AnimatedCounter = ({ end, duration = 2000, prefix = "", suffix = "" }) => 
   return <span>{prefix}{count.toLocaleString()}{suffix}</span>;
 };
 
+interface StatCardProps {
+  title: string;
+  value: number;
+  change: number;
+  icon: LucideIcon;
+  gradient: string;
+  delay?: number;
+}
+
 // Stat Card Component with Animation
-const StatCard = ({ title, value, change, icon: Icon, gradient, delay = 0 }) => {
+const StatCard: React.FC<StatCardProps> = ({ 
+  title, 
+  value, 
+  change, 
+  icon: Icon, 
+  gradient, 
+  delay = 0 
+}) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -132,9 +161,14 @@ const StatCard = ({ title, value, change, icon: Icon, gradient, delay = 0 }) => 
   );
 };
 
+interface SimpleBarChartProps {
+  data: number[];
+  height?: number;
+}
+
 // Chart Component (Simplified Bar Chart)
-const SimpleBarChart = ({ data, height = 200 }) => {
-  const [animatedData, setAnimatedData] = useState(data.map(() => 0));
+const SimpleBarChart: React.FC<SimpleBarChartProps> = ({ data, height = 200 }) => {
+  const [animatedData, setAnimatedData] = useState<number[]>(data.map(() => 0));
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -179,8 +213,24 @@ const SimpleBarChart = ({ data, height = 200 }) => {
   );
 };
 
+interface ActivityItemProps {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  time: string;
+  color: string;
+  delay?: number;
+}
+
 // Recent Activity Item
-const ActivityItem = ({ icon: Icon, title, description, time, color, delay = 0 }) => {
+const ActivityItem: React.FC<ActivityItemProps> = ({ 
+  icon: Icon, 
+  title, 
+  description, 
+  time, 
+  color, 
+  delay = 0 
+}) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -202,12 +252,14 @@ const ActivityItem = ({ icon: Icon, title, description, time, color, delay = 0 }
         cursor: "pointer",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = colors.lavender;
-        e.currentTarget.style.transform = "translateX(4px)";
+        const target = e.currentTarget as HTMLDivElement;
+        target.style.backgroundColor = colors.lavender;
+        target.style.transform = "translateX(4px)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = colors.lightBg;
-        e.currentTarget.style.transform = "translateX(0)";
+        const target = e.currentTarget as HTMLDivElement;
+        target.style.backgroundColor = colors.lightBg;
+        target.style.transform = "translateX(0)";
       }}
     >
       <Avatar sx={{ bgcolor: color, width: 40, height: 40 }}>
@@ -229,8 +281,22 @@ const ActivityItem = ({ icon: Icon, title, description, time, color, delay = 0 }
   );
 };
 
+interface PerformanceCardProps {
+  title: string;
+  value: number;
+  target: number;
+  icon: LucideIcon;
+  color: string;
+}
+
 // Performance Card
-const PerformanceCard = ({ title, value, target, icon: Icon, color }) => {
+const PerformanceCard: React.FC<PerformanceCardProps> = ({ 
+  title, 
+  value, 
+  target, 
+  icon: Icon, 
+  color 
+}) => {
   const percentage = Math.min((value / target) * 100, 100);
 
   return (
@@ -279,9 +345,25 @@ const PerformanceCard = ({ title, value, target, icon: Icon, color }) => {
   );
 };
 
+interface StatData {
+  title: string;
+  value: number;
+  change: number;
+  icon: LucideIcon;
+  gradient: string;
+}
+
+interface ActivityData {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  time: string;
+  color: string;
+}
+
 // Main Dashboard Component
 export default function Dashboard() {
-  const statsData = [
+  const statsData: StatData[] = [
     {
       title: "Total Users",
       value: 18765,
@@ -315,7 +397,7 @@ export default function Dashboard() {
   const chartData = [52, 48, 65, 43, 58, 72, 48, 55, 68, 62, 58, 70];
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-  const recentActivities = [
+  const recentActivities: ActivityData[] = [
     {
       icon: CheckCircle2,
       title: "New ticket resolved",
@@ -349,146 +431,7 @@ export default function Dashboard() {
   return (
     <Box sx={{ maxWidth: 1900, mx: "auto", p: { xs: 2, md: 3 }, bgcolor: colors.lightBg, minHeight: "100vh" }}>
       {/* Welcome Header */}
-      {/* Welcome Hero Section */}
-<div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "1.6fr 1fr",
-    gap: "24px",
-    marginBottom: "32px",
-  }}
->
-  {/* Left Welcome Card */}
-  <div
-    style={{
-      padding: "32px",
-      borderRadius: "20px",
-      background: "linear-gradient(135deg, #0F2027, #203A43, #2C5364)",
-      color: "white",
-      position: "relative",
-      overflow: "hidden",
-      minHeight: "220px",
-      display: "flex",
-      alignItems: "center",
-    }}
-  >
-    {/* Background Glow */}
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        background:
-          "radial-gradient(circle at top left, rgba(255,255,255,0.15), transparent 60%)",
-      }}
-    />
-
-    <div style={{ position: "relative", zIndex: 1, maxWidth: "520px" }}>
-      <h1
-        style={{
-          fontSize: "28px",
-          fontWeight: "700",
-          marginBottom: "12px",
-        }}
-      >
-        Welcome back 👋 <br />
-        <span style={{ fontSize: "32px" }}>Admin</span>
-      </h1>
-
-      <p
-        style={{
-          fontSize: "15px",
-          opacity: 0.85,
-          lineHeight: 1.6,
-          marginBottom: "20px",
-        }}
-      >
-        If you are going to use a passage of Lorem Ipsum, you need to be sure
-        there isn't anything.
-      </p>
-
-      <button
-        style={{
-          padding: "10px 22px",
-          borderRadius: "10px",
-          border: "none",
-          backgroundColor: "#2EE59D",
-          color: "#0F2027",
-          fontWeight: 600,
-          cursor: "pointer",
-          fontSize: "14px",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateY(-2px)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "translateY(0)";
-        }}
-      >
-        Go now
-      </button>
-    </div>
-
-    {/* Illustration */}
-    <img
-      src="/vercel.svg"
-      alt="Dashboard Illustration"
-      style={{
-        position: "absolute",
-        right: "24px",
-        bottom: "0",
-        height: "180px",
-        pointerEvents: "none",
-      }}
-    />
-  </div>
-
-  {/* Right Featured Card */}
-  <div
-    style={{
-      padding: "24px",
-      borderRadius: "20px",
-      background: "linear-gradient(180deg, #000000, #1A1A1A)",
-      color: "white",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "flex-end",
-      minHeight: "220px",
-    }}
-  >
-    <span
-      style={{
-        color: "#2EE59D",
-        fontSize: "12px",
-        fontWeight: 600,
-        marginBottom: "8px",
-      }}
-    >
-      FEATURED APP
-    </span>
-
-    <h3
-      style={{
-        fontSize: "18px",
-        fontWeight: "700",
-        marginBottom: "6px",
-      }}
-    >
-      Mental Health in the Digital Age
-    </h3>
-
-    <p
-      style={{
-        fontSize: "13px",
-        opacity: 0.75,
-        lineHeight: 1.5,
-      }}
-    >
-      He carefully crafted a beautiful sculpture out of clay, highlighting the
-      importance of balance.
-    </p>
-  </div>
-</div>
-
+      <EnhancedDashboardHeader />
 
       {/* Stats Cards */}
       <Box
@@ -538,7 +481,7 @@ export default function Dashboard() {
           </div>
           <SimpleBarChart data={chartData} />
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: "16px", paddingTop: "16px" }}>
-            {months.map((month, index) => (
+            {months.map((month) => (
               <span key={month} style={{ fontSize: "11px", color: colors.textSecondary }}>
                 {month}
               </span>
@@ -672,10 +615,10 @@ export default function Dashboard() {
               fontWeight: 600,
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.gap = "8px";
+              (e.currentTarget as HTMLButtonElement).style.gap = "8px";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.gap = "4px";
+              (e.currentTarget as HTMLButtonElement).style.gap = "4px";
             }}
           >
             View All

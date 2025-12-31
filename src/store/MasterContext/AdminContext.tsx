@@ -8,7 +8,7 @@ import {
   doc,
   setDoc,
   updateDoc,
-  deleteDoc,
+  
   query,
   orderBy,
   serverTimestamp,
